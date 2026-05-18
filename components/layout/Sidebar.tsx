@@ -48,7 +48,7 @@ export function Sidebar() {
           setCenterInfo({ name: userData.center.name, logo: userData.center.logo })
           return
         }
-        const centerId = userData.center_id
+        const centerId = userData.center_id || userData.group?.center_id
         if (centerId) {
           const token = localStorage.getItem('token')
           const res = await fetch(`${API_URL}/education-centers/${centerId}`, {
