@@ -254,7 +254,7 @@ export default function DashboardPage() {
                       {studentGroup.mainTeacher && (
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={studentGroup.mainTeacher.photo ? `http://localhost:4000/uploads/teachers/${studentGroup.mainTeacher.photo}` : ""} />
+                            <AvatarImage src={studentGroup.mainTeacher.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/teachers/${studentGroup.mainTeacher.photo}` : ""} />
                             <AvatarFallback className="bg-blue-100 text-blue-700">
                               {studentGroup.mainTeacher.first_name?.[0]}{studentGroup.mainTeacher.last_name?.[0]}
                             </AvatarFallback>
@@ -270,7 +270,7 @@ export default function DashboardPage() {
                       {studentGroup.supportTeacher && (
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={studentGroup.supportTeacher.photo ? `http://localhost:4000/uploads/teachers/${studentGroup.supportTeacher.photo}` : ""} />
+                            <AvatarImage src={studentGroup.supportTeacher.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/teachers/${studentGroup.supportTeacher.photo}` : ""} />
                             <AvatarFallback className="bg-green-100 text-green-700">
                               {studentGroup.supportTeacher.first_name?.[0]}{studentGroup.supportTeacher.last_name?.[0]}
                             </AvatarFallback>
@@ -429,7 +429,7 @@ export default function DashboardPage() {
               <CardContent className="p-0 relative">
                 <div className="relative h-64">
                   <img
-                    src={news[currentNewsIndex]?.image ? `http://localhost:4000${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "/placeholder.svg"}
+                    src={news[currentNewsIndex]?.image ? `${process.env.NEXT_PUBLIC_API_URL}${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "/placeholder.svg"}
                     alt={news[currentNewsIndex]?.title || ""}
                     className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/800x400/6366f1/ffffff?text=Yangilik" }}
@@ -551,7 +551,7 @@ export default function DashboardPage() {
             <Card className="overflow-hidden">
               <CardContent className="p-0 relative">
                 <div className="relative h-64">
-                  <img src={news[currentNewsIndex]?.image ? `http://localhost:4000${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "https://placehold.co/800x400"} alt={news[currentNewsIndex]?.title || ""} className="w-full h-full object-cover"
+                  <img src={news[currentNewsIndex]?.image ? `${process.env.NEXT_PUBLIC_API_URL}${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "https://placehold.co/800x400"} alt={news[currentNewsIndex]?.title || ""} className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/800x400/6366f1/ffffff?text=Yangilik" }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 text-white">
@@ -633,7 +633,7 @@ export default function DashboardPage() {
                     <CardContent className="p-5">
                       <div className="flex items-start gap-4">
                         <Avatar className="h-14 w-14 border-2 border-pink-200 shrink-0">
-                          <AvatarImage src={child.photo ? `http://localhost:4000/uploads/students/${child.photo}` : ""} />
+                          <AvatarImage src={child.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${child.photo}` : ""} />
                           <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white">
                             {child.first_name?.[0]}{child.last_name?.[0]}
                           </AvatarFallback>
@@ -758,7 +758,7 @@ export default function DashboardPage() {
             <Card className="overflow-hidden">
               <CardContent className="p-0 relative">
                 <div className="relative h-64">
-                  <img src={news[currentNewsIndex]?.image ? `http://localhost:4000${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "https://placehold.co/800x400"} alt={news[currentNewsIndex]?.title || ""} className="w-full h-full object-cover"
+                  <img src={news[currentNewsIndex]?.image ? `${process.env.NEXT_PUBLIC_API_URL}${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "https://placehold.co/800x400"} alt={news[currentNewsIndex]?.title || ""} className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/800x400/6366f1/ffffff?text=Yangilik" }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 text-white">

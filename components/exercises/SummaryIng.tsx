@@ -132,7 +132,7 @@ export default function SummaryIng({
   const getMediaUrl = (path: string) => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
-    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.ilmify-edu.uz';
     return `${base}/uploads/tasks/${path}`;
   };
 

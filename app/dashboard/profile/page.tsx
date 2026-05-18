@@ -51,7 +51,7 @@ export default function ProfilePage() {
   const avatarSrc =
     !studentData?.photo || imageError
       ? "/user.png"
-      : `http://localhost:4000/uploads/students/${studentData.photo}`
+      : `${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${studentData.photo}`
 
   const group = studentData?.group_students?.[0]?.group
   const level = group?.level?.name ?? "No level"

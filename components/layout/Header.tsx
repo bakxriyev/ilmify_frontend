@@ -70,11 +70,11 @@ export function Header({ title }: HeaderProps) {
     if (!displayData?.photo || imageError) return "/user.png";
     if (displayData.photo.startsWith('http')) return displayData.photo;
     if (isStudent) {
-      return `http://localhost:4000/uploads/students/${displayData.photo}`;
+      return `${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${displayData.photo}`;
     } else if (isParent) {
-      return `http://localhost:4000/uploads/parents/${displayData.photo}`;
+      return `${process.env.NEXT_PUBLIC_API_URL}/uploads/parents/${displayData.photo}`;
     } else {
-      return `http://localhost:4000/uploads/teachers/${displayData.photo}`;
+      return `${process.env.NEXT_PUBLIC_API_URL}/uploads/teachers/${displayData.photo}`;
     }
   })();
 

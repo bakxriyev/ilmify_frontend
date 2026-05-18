@@ -216,7 +216,7 @@ export default function RankingPage() {
                   {/* 2-o‘rin */}
                   <div className="flex flex-col items-center">
                     <Avatar className="h-14 w-14 sm:h-16 sm:w-16 ring-4 ring-white shadow-md mb-2">
-                      <AvatarImage src={`http://localhost:4000/uploads/students/${top3[1].photo}`} />
+                      <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${top3[1].photo}`} />
                       <AvatarFallback className="bg-black text-white text-3xl">M</AvatarFallback>
                     </Avatar>
                     <div className="w-20 h-32 sm:w-24 sm:h-36 lg:w-24 lg:h-36 bg-gradient-to-b from-amber-400 to-yellow-600 rounded-t-2xl flex items-end justify-center relative shadow">
@@ -230,7 +230,7 @@ export default function RankingPage() {
                   {/* 1-o‘rin */}
                   <div className="flex flex-col items-center -mt-3 sm:-mt-4 lg:-mt-6">
                     <Avatar className="h-18 w-18 sm:h-20 sm:w-20 lg:h-24 lg:w-24 ring-4 ring-white shadow-lg mb-2 scale-110">
-                      <AvatarImage src={`http://localhost:4000/uploads/students/${top3[0].photo}`} />
+                      <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${top3[0].photo}`} />
                       <AvatarFallback className="bg-black text-white text-4xl">D</AvatarFallback>
                     </Avatar>
                     <div className="w-24 h-40 sm:w-28 sm:h-44 lg:w-32 lg:h-48 bg-gradient-to-b from-yellow-400 to-amber-500 rounded-t-3xl flex items-end justify-center relative shadow-2xl">
@@ -246,7 +246,7 @@ export default function RankingPage() {
                   {/* 3-o‘rin */}
                   <div className="flex flex-col items-center">
                     <Avatar className="h-14 w-14 sm:h-16 sm:w-16 ring-4 ring-white shadow-md mb-2">
-                      <AvatarImage src={`http://localhost:4000/uploads/students/${top3[2].photo}`} />
+                      <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${top3[2].photo}`} />
                       <AvatarFallback className="bg-black text-white text-3xl">A</AvatarFallback>
                     </Avatar>
                     <div className="w-20 h-32 sm:w-24 sm:h-36 lg:w-24 lg:h-36 bg-gradient-to-b from-orange-400 to-amber-600 rounded-t-2xl flex items-end justify-center relative shadow">
@@ -308,7 +308,7 @@ export default function RankingPage() {
                     </div>
 
                     <Avatar className="h-11 w-11 sm:h-12 sm:w-12 border-2 border-white shadow ml-3 flex-shrink-0">
-                      <AvatarImage src={`http://localhost:4000/uploads/students/${student.photo}`} />
+                      <AvatarImage src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${student.photo}`} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-lg">
                         {student.firstName[0]}{student.lastName[0]}
                       </AvatarFallback>

@@ -204,7 +204,7 @@ export default function SettingsPage() {
         <div className="h-24 bg-gradient-to-r from-yellow-400 to-orange-500" />
         <CardContent className="relative -mt-12 flex items-end gap-6 pb-6">
           <Avatar className="h-24 w-24 border-4 border-white shadow-xl">
-            <AvatarImage src={studentData?.photo ? `http://localhost:4000/uploads/students/${studentData.photo}` : "/user.png"} />
+            <AvatarImage src={studentData?.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${studentData.photo}` : "/user.png"} />
             <AvatarFallback className="bg-gray-300 text-2xl font-bold">{initials}</AvatarFallback>
           </Avatar>
           <div className="mb-2">

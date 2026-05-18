@@ -9,7 +9,7 @@ import Image from 'next/image';
 // Rasm URL yordamchisi
 const getImageUrl = (photo: string | null): string => {
   if (!photo) return '/images/placeholder.png';
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.ilmify-edu.uz';
   return `${base}/uploads/shop/${photo}`;
 };
 
