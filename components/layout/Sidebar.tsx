@@ -39,16 +39,29 @@ export function Sidebar() {
   const [centerInfo, setCenterInfo] = useState<{ name: string; logo: string | null } | null>(null)
 
   useEffect(() => {
-    try {
-      const userRaw = localStorage.getItem('user')
-      if (userRaw) {
+    const loadCenter = async () => {
+      try {
+        const userRaw = localStorage.getItem('user')
+        if (!userRaw) return
         const userData = JSON.parse(userRaw)
-        const center = userData.center
-        if (center) {
-          setCenterInfo({ name: center.name, logo: center.logo })
+        if (userData.center) {
+          setCenterInfo({ name: userData.center.name, logo: userData.center.logo })
+          return
         }
-      }
-    } catch {}
+        const centerId = userData.center_id
+        if (centerId) {
+          const token = localStorage.getItem('token')
+          const res = await fetch(`${API_URL}/education-centers/${centerId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          })
+          if (res.ok) {
+            const c = await res.json()
+            setCenterInfo({ name: c.name, logo: c.logo })
+          }
+        }
+      } catch {}
+    }
+    loadCenter()
   }, [])
 
   let menuItems = [...baseMenuItems]

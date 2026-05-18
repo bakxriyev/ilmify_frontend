@@ -10,6 +10,15 @@ export interface LoginResponse {
     phone_number: string;
     photo: string;
     group: any;
+    center_id?: number;
+    center?: {
+      id: number;
+      name: string;
+      logo: string | null;
+      location: string | null;
+      phone: string | null;
+      is_active: boolean;
+    } | null;
   };
   device_id?: string;
 }
@@ -290,6 +299,15 @@ export interface Teacher {
   gmail: string;
   photo: string | null;
   teacher_type: 'MAIN_TEACHER' | 'SUPPORT_TEACHER';
+  center_id?: number;
+  center?: {
+    id: number;
+    name: string;
+    logo: string | null;
+    location: string | null;
+    phone: string | null;
+    is_active: boolean;
+  } | null;
 }
 export interface TeacherInfo {
   id: string;
