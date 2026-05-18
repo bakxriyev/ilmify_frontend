@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://api.ilmify-edu.uz';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.ilmify-edu.uz';
 
 export interface LoginResponse {
   access_token: string;
