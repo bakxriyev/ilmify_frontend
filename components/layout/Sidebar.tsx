@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, BookOpen, Award, TrendingUp, Plus, User, LogOut, ShoppingBag, MessageSquare, Users, School, Heart } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Home, BookOpen, Award, TrendingUp, Plus, User, LogOut, ShoppingBag, MessageSquare, Users, School, Heart, Building } from "lucide-react"
 import { Logo } from "@/components/ui/Logo"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -30,9 +31,25 @@ const parentItems = [
   { icon: Award,      label: "Davomat",     href: "/dashboard/marks" },
 ]
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.ilmify-edu.uz'
+
 export function Sidebar() {
   const pathname = usePathname()
-  const { logout, isStudent, isTeacher, isParent } = useAuth()
+  const { user, logout, isStudent, isTeacher, isParent } = useAuth()
+  const [centerInfo, setCenterInfo] = useState<{ name: string; logo: string | null } | null>(null)
+
+  useEffect(() => {
+    try {
+      const userRaw = localStorage.getItem('user')
+      if (userRaw) {
+        const userData = JSON.parse(userRaw)
+        const center = userData.center
+        if (center) {
+          setCenterInfo({ name: center.name, logo: center.logo })
+        }
+      }
+    } catch {}
+  }, [])
 
   let menuItems = [...baseMenuItems]
   if (isStudent) menuItems = [...baseMenuItems, ...studentItems]
@@ -44,7 +61,24 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex sticky top-0 h-screen w-72 shrink-0 bg-gray-800 text-white z-40 flex-col rounded-r-3xl shadow-xl">
         <div className="p-8">
-          <Logo size="md" />
+          {centerInfo ? (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-700 flex items-center justify-center shrink-0">
+                {centerInfo.logo ? (
+                  <img src={`${API_URL}/uploads/centers/${centerInfo.logo}`}
+                    className="w-full h-full object-cover" alt={centerInfo.name} />
+                ) : (
+                  <Building className="w-5 h-5 text-blue-400" />
+                )}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-white text-sm truncate">{centerInfo.name}</span>
+                <span className="text-[10px] text-blue-300">O'quv markazi</span>
+              </div>
+            </div>
+          ) : (
+            <Logo size="md" />
+          )}
         </div>
 
         <nav className="flex-1 mt-6 flex flex-col gap-1 px-4">
