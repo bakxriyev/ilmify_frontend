@@ -1,0 +1,25 @@
+{student_id: "25", unit_id: "8", exercise_id: "19", task_id: "15", answer_text: "{"0":"near"}",…}
+answer_text
+: 
+"{\"0\":\"near\"}"
+attempt_number
+: 
+1
+exercise_id
+: 
+"19"
+is_completed
+: 
+true
+is_correct
+: 
+false
+student_id
+: 
+"25"
+task_id
+: 
+"15"
+unit_id
+: 
+"8"
