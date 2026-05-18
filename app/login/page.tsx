@@ -177,7 +177,7 @@ export default function LoginPage() {
               <div>
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-1 drop-shadow-sm">
                   <Smartphone className="w-4 h-4 text-indigo-600" />
-                  Telefon raqam
+                  Telefon raqamingiz
                 </label>
                 <div className="relative">
                   <Input
