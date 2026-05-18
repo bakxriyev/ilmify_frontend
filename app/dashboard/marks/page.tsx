@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from "@/contexts/AuthContext"
 import { api } from "@/lib/api"
-import { Student, GroupStudent, Level, Group, TeacherInfo, AttendanceRecord } from "@/lib/api"
+import { Student, GroupStudent, Level, Group, AttendanceRecord } from "@/lib/api"
+import type { TeacherInfo as TeacherInfoType } from "@/lib/api"
 import { format, addMonths, subMonths, isFuture, isToday, addHours } from "date-fns"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { AttendanceSelector } from "@/components/AttendanceSelector"
@@ -72,7 +73,7 @@ const getStudentPhotoUrl = (photoUrl: string | null | undefined): string | undef
 }
 
 // ---------- Teacher Card ----------
-function TeacherInfo({ teacher, role }: { teacher: TeacherInfo; role: string }) {
+function TeacherInfo({ teacher, role }: { teacher: TeacherInfoType; role: string }) {
   if (!teacher) return null
 
   const teacherPhotoUrl = getStudentPhotoUrl(teacher.photo)

@@ -291,30 +291,57 @@ export interface Teacher {
   photo: string | null;
   teacher_type: 'MAIN_TEACHER' | 'SUPPORT_TEACHER';
 }
+export interface TeacherInfo {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  gmail: string;
+  photo: string | null;
+  teacher_type?: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  teacher_id: string;
+  support_teacher_id: string;
+  level_id: string;
+  room_id?: string;
+  kp?: number;
+  monthly_price?: number;
+  student_count?: number;
+  room?: Room;
+  mainTeacher?: TeacherInfo;
+  supportTeacher?: TeacherInfo;
+  level?: Level;
+  lessons?: GroupLesson[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TeacherGroup {
+  id: string;
+  name: string;
+  teacher_id: string;
+  support_teacher_id: string;
+  level_id: string;
+  room?: Room;
+  kp?: number;
+  monthly_price?: number;
+  student_count?: number;
+  created_at: string;
+  updated_at: string;
+  mainTeacher?: Teacher;
+  supportTeacher?: Teacher;
+}
+
 export interface TeacherGroupsResponse {
   teacher_id: number;
   teacher_name: string;
   teacher_type: string;
-  main_groups: Array<{
-    id: string;
-    name: string;
-    teacher_id: string;
-    support_teacher_id: string;
-    level_id: string;
-    room?: Room;
-    created_at: string;
-    updated_at: string;
-  }>;
-  support_groups: Array<{
-    id: string;
-    name: string;
-    teacher_id: string;
-    support_teacher_id: string;
-    level_id: string;
-    room?: Room;
-    created_at: string;
-    updated_at: string;
-  }>;
+  main_groups: TeacherGroup[];
+  support_groups: TeacherGroup[];
   total_groups: number;
 }
 

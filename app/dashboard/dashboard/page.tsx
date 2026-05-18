@@ -13,7 +13,7 @@ import {
   Users, BookOpen, Calendar, Newspaper, CreditCard, Clock, ArrowRight,
   ChevronLeft, ChevronRight, GraduationCap, School, UserCheck, AlertTriangle,
   DollarSign, TrendingUp, MapPin, Phone, Mail, Bell, BellRing, X, CheckCircle2,
-  UserX, Percent, CalendarDays, Menu
+  UserX, Percent, CalendarDays, Menu, Wallet, Eye, EyeOff
 } from "lucide-react"
 import Link from "next/link"
 import { format, parseISO, isToday, startOfMonth, endOfMonth, isFuture } from "date-fns"
@@ -72,15 +72,19 @@ export default function DashboardPage() {
   const loadTeacherData = useCallback(async () => {
     if (!user?.id || !isTeacher) return
     try {
+      setIsTeacherGroupsLoading(true)
       const groupsData = await api.getTeacherGroups(Number(user.id))
       const allGroups = [...(groupsData.main_groups || []), ...(groupsData.support_groups || [])]
       setTeacherGroups(allGroups)
+      const totalStudents = allGroups.reduce((s: number, g: any) => s + (g.student_count || 0), 0)
       setTeacherStats({
         groups: groupsData.total_groups,
-        students: 0,
+        students: totalStudents,
       })
     } catch (err) {
       console.error("Teacher data load error:", err)
+    } finally {
+      setIsTeacherGroupsLoading(false)
     }
   }, [user?.id, isTeacher])
 
@@ -464,33 +468,60 @@ export default function DashboardPage() {
 
   // ===================== TEACHER DASHBOARD =====================
   if (isTeacher) {
+    const totalMonthlyIncome = teacherGroups.reduce((s: number, g: any) => s + ((g.kp || 0) * (g.student_count || 0)), 0)
     return (
       <div className="p-4 md:p-6 bg-gray-50 min-h-screen space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500">Xush kelibsiz, {user && 'first_name' in user ? (user as any).first_name : "Oqituvchi"}!</p>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+              Xush kelibsiz, {user && 'first_name' in user ? (user as any).first_name : "Oqituvchi"}!
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">Sizning guruhlaringiz va oquvchilaringiz</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-white">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-700 text-white border-0 shadow-lg">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <School className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <School className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{teacherStats?.groups || teacherGroups.length}</p>
-                <p className="text-sm text-gray-500">Jami guruhlar</p>
+                <p className="text-2xl font-bold">{teacherStats?.groups || teacherGroups.length}</p>
+                <p className="text-sm text-white/80">Jami guruhlar</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white">
+          <Card className="bg-gradient-to-br from-green-500 to-green-700 text-white border-0 shadow-lg">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <Users className="h-6 w-6 text-green-600" />
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{teacherStats?.students || 0}</p>
-                <p className="text-sm text-gray-500">Jami oquvchilar</p>
+                <p className="text-2xl font-bold">{teacherStats?.students || 0}</p>
+                <p className="text-sm text-white/80">Jami oquvchilar</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-700 text-white border-0 shadow-lg">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <Wallet className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{totalMonthlyIncome.toLocaleString()} so'm</p>
+                <p className="text-sm text-white/80">Oylik daromad</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-amber-500 to-orange-700 text-white border-0 shadow-lg">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{teacherGroups.filter((g: any) => g.teacher_id === user?.id).length}</p>
+                <p className="text-sm text-white/80">Asosiy guruhlar</p>
               </div>
             </CardContent>
           </Card>
@@ -498,45 +529,75 @@ export default function DashboardPage() {
 
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <BookOpen className="h-5 w-5 text-blue-600" />
+            <School className="h-5 w-5 text-blue-600" />
             <h2 className="text-lg font-semibold text-gray-900">Mening guruhlarim</h2>
+            <span className="text-sm text-gray-400">({teacherGroups.length} ta)</span>
           </div>
           {isTeacherGroupsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => <div key={i} className="h-28 bg-gray-200 animate-pulse rounded-xl" />)}
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-40 bg-white rounded-2xl animate-pulse p-5 space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-2/3" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                </div>
+              ))}
             </div>
           ) : teacherGroups.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teacherGroups.map((group) => (
-                <Link href={`/dashboard/marks?groupId=${group.id}`} key={group.id}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-bold text-gray-900">{group.name}</h3>
+              {teacherGroups.map((group) => {
+                const isMain = group.teacher_id === user?.id
+                const income = (group.kp || 0) * (group.student_count || 0)
+                return (
+                  <Link href={`/dashboard/marks?groupId=${group.id}`} key={group.id}>
+                    <Card className={`hover:shadow-xl transition-all duration-200 cursor-pointer border-0 shadow-md overflow-hidden group ${isMain ? 'ring-1 ring-blue-200' : 'ring-1 ring-gray-200'}`}>
+                      <div className={`h-1.5 ${isMain ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`} />
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 text-base truncate">{group.name}</h3>
+                            <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full mt-1 font-medium ${isMain ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                              {isMain ? "Asosiy oqituvchi" : "Yordamchi oqituvchi"}
+                            </span>
+                          </div>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isMain ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                            <Users className={`h-5 w-5 ${isMain ? 'text-blue-600' : 'text-gray-500'}`} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
                           {group.room && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              <MapPin className="h-3 w-3 inline mr-1" />
-                              {group.room.name}
-                            </p>
+                            <div className="flex items-center gap-1.5 text-gray-500">
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span>{group.room.name}</span>
+                            </div>
                           )}
-                          <p className="text-xs text-gray-400 mt-1">
-                            {group.teacher_id === user?.id ? "Asosiy oqituvchi" : "Yordamchi oqituvchi"}
-                          </p>
+                          <div className="flex items-center gap-1.5 text-gray-500">
+                            <Users className="h-3.5 w-3.5" />
+                            <span>{group.student_count || 0} oquvchi</span>
+                          </div>
+                          {group.kp ? (
+                            <div className="flex items-center gap-1.5 text-emerald-600 font-medium">
+                              <Wallet className="h-3.5 w-3.5" />
+                              <span>{Number(group.kp).toLocaleString()} so'm</span>
+                            </div>
+                          ) : null}
+                          <div className="flex items-center gap-1.5 text-gray-500">
+                            <TrendingUp className="h-3.5 w-3.5" />
+                            <span>{income.toLocaleString()} so'm/oy</span>
+                          </div>
                         </div>
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-blue-600" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
             </div>
           ) : (
-            <Card>
-              <CardContent className="p-8 text-center text-gray-500">
-                Hozircha sizga biriktirilgan guruh mavjud emas.
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-12 text-center">
+                <School className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-500 text-lg font-medium">Hozircha sizga biriktirilgan guruh mavjud emas</p>
+                <p className="text-gray-400 text-sm mt-2">Administrator bilan bog'laning</p>
               </CardContent>
             </Card>
           )}
@@ -548,15 +609,21 @@ export default function DashboardPage() {
               <Newspaper className="h-5 w-5 text-indigo-600" />
               <h2 className="text-lg font-semibold text-gray-900">Yangiliklar</h2>
             </div>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-0 shadow-md">
               <CardContent className="p-0 relative">
                 <div className="relative h-64">
-                  <img src={news[currentNewsIndex]?.image ? `${process.env.NEXT_PUBLIC_API_URL}${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "https://placehold.co/800x400"} alt={news[currentNewsIndex]?.title || ""} className="w-full h-full object-cover"
+                  <img src={news[currentNewsIndex]?.image ? `${process.env.NEXT_PUBLIC_API_URL}${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "https://placehold.co/800x400/6366f1/ffffff?text=Yangilik"} alt={news[currentNewsIndex]?.title || ""} className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/800x400/6366f1/ffffff?text=Yangilik" }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 text-white">
                     <h3 className="text-xl font-bold">{news[currentNewsIndex]?.title}</h3>
                     <p className="text-sm opacity-90 mt-1">{news[currentNewsIndex]?.description}</p>
+                  </div>
+                  <div className="absolute top-4 right-4 flex gap-1.5">
+                    {news.map((_, idx) => (
+                      <button key={idx} onClick={() => setCurrentNewsIndex(idx)}
+                        className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentNewsIndex ? "bg-white scale-110" : "bg-white/50"}`} />
+                    ))}
                   </div>
                 </div>
               </CardContent>
