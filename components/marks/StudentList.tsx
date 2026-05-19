@@ -54,7 +54,7 @@ export function StudentList() {
         <CardContent>
           {/* Calendar Header */}
           <div className="grid grid-cols-9 gap-2 mb-4 text-center text-sm font-medium text-blue-700">
-            <div className="col-span-2">Students</div>
+            <div className="col-span-2">Student</div>
             {dates.map((date) => (
               <div key={date} className="text-xs">
                 {date}
