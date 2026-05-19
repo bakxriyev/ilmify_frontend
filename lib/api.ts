@@ -933,21 +933,33 @@ export const notificationApi = {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`${API_URL}/notifications/user/${userId}`, { headers });
+    const res = await fetch(`${API_URL}/notifications/user/${userId}?role=${typeof window !== 'undefined' ? localStorage.getItem('role') || 'student' : 'student'}`, { headers });
     if (!res.ok) throw new Error('Failed to fetch notifications');
-    return res.json();
+    const json = await res.json();
+    return json.data || [];
   },
 
   markAsRead: async (notificationId: number): Promise<void> => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`${API_URL}/notifications/${notificationId}`, {
+    const res = await fetch(`${API_URL}/notifications/${notificationId}/read`, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ is_read: true }),
     });
     if (!res.ok) throw new Error('Failed to mark notification as read');
+  },
+
+  markAllAsRead: async (userId: number, role?: string): Promise<void> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const params = role ? `?role=${role}` : '';
+    const res = await fetch(`${API_URL}/notifications/read-all/${userId}${params}`, {
+      method: 'PATCH',
+      headers,
+    });
+    if (!res.ok) throw new Error('Failed to mark all as read');
   },
 
   markMultipleAsRead: async (notificationIds: number[]): Promise<void> => {

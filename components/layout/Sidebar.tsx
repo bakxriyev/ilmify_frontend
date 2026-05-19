@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
-import { Home, BookOpen, Award, TrendingUp, Plus, User, LogOut, ShoppingBag, MessageSquare, Users, School, Heart, Building } from "lucide-react"
+import { Home, BookOpen, Award, TrendingUp, Plus, User, LogOut, ShoppingBag, MessageSquare, Users, School, Heart, Building, Wallet } from "lucide-react"
 import { Logo } from "@/components/ui/Logo"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ const baseMenuItems = [
 
 const studentItems = [
   { icon: Award,      label: "Marks",   href: "/dashboard/marks" },
+  { icon: Wallet,     label: "Payments", href: "/dashboard/payments" },
   { icon: Plus,       label: "Extra",   href: "/dashboard/extra-lesson" },
   { icon: ShoppingBag, label: "Shop",  href: "/dashboard/shop" },
   { icon: TrendingUp, label: "Ranking", href: "/dashboard/ranking" },
@@ -29,6 +30,7 @@ const teacherItems = [
 const parentItems = [
   { icon: Heart,      label: "Farzandlarim", href: "/dashboard" },
   { icon: Award,      label: "Davomat",     href: "/dashboard/marks" },
+  { icon: Wallet,     label: "Payments",    href: "/dashboard/payments" },
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.ilmify-edu.uz'
@@ -41,14 +43,24 @@ export function Sidebar() {
   useEffect(() => {
     const loadCenter = async () => {
       try {
+        const cached = localStorage.getItem('center_info')
+        if (cached) {
+          setCenterInfo(JSON.parse(cached))
+          return
+        }
         const userRaw = localStorage.getItem('user')
         if (!userRaw) return
         const userData = JSON.parse(userRaw)
-        if (userData.center) {
-          setCenterInfo({ name: userData.center.name, logo: userData.center.logo })
-          return
+
+        let centerId: number | undefined
+        if (userData.center_id) {
+          centerId = Number(userData.center_id)
+        } else if (userData.center?.id) {
+          centerId = Number(userData.center.id)
+        } else if (userData.group_students?.[0]?.group?.center_id) {
+          centerId = Number(userData.group_students[0].group.center_id)
         }
-        const centerId = userData.center_id || userData.group?.center_id
+
         if (centerId) {
           const token = localStorage.getItem('token')
           const res = await fetch(`${API_URL}/education-centers/${centerId}`, {
@@ -56,7 +68,9 @@ export function Sidebar() {
           })
           if (res.ok) {
             const c = await res.json()
-            setCenterInfo({ name: c.name, logo: c.logo })
+            const info = { name: c.name, logo: c.logo }
+            setCenterInfo(info)
+            localStorage.setItem('center_info', JSON.stringify(info))
           }
         }
       } catch {}
@@ -66,8 +80,8 @@ export function Sidebar() {
 
   let menuItems = [...baseMenuItems]
   if (isStudent) menuItems = [...baseMenuItems, ...studentItems]
-  else if (isTeacher) menuItems = [...baseMenuItems, ...teacherItems]
-  else if (isParent) menuItems = [...baseMenuItems, ...parentItems]
+  else if (isTeacher) menuItems = [...baseMenuItems.filter(i => i.href !== '/dashboard'), ...teacherItems]
+  else if (isParent) menuItems = [...baseMenuItems.filter(i => i.href !== '/dashboard'), ...parentItems]
 
   return (
     <>

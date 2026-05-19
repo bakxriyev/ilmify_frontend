@@ -13,10 +13,12 @@ import {
   Users, BookOpen, Calendar, Newspaper, CreditCard, Clock, ArrowRight,
   ChevronLeft, ChevronRight, GraduationCap, School, UserCheck, AlertTriangle,
   DollarSign, TrendingUp, MapPin, Phone, Mail, Bell, BellRing, X, CheckCircle2,
-  UserX, Percent, CalendarDays, Menu, Wallet, Eye, EyeOff
+  UserX, Percent, CalendarDays, Menu, Wallet, Eye, EyeOff, XCircle
 } from "lucide-react"
 import Link from "next/link"
 import { format, parseISO, isToday, startOfMonth, endOfMonth, isFuture } from "date-fns"
+
+const MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr']
 
 export default function DashboardPage() {
   const { user, isStudent, isTeacher, isParent } = useAuth()
@@ -637,7 +639,7 @@ export default function DashboardPage() {
   // ===================== PARENT DASHBOARD =====================
   if (isParent) {
     return (
-      <div className="p-4 md:p-6 bg-gray-50 min-h-screen space-y-6">
+      <div className="p-4 md:p-6 bg-gray-50 min-h-screen space-y-6 pb-24 md:pb-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -648,27 +650,27 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Card className="bg-white">
+          <Card className="bg-gradient-to-br from-pink-500 to-rose-600 text-white border-0 shadow-lg">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-                <Users className="h-6 w-6 text-pink-600" />
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{parentChildren.length}</p>
-                <p className="text-sm text-gray-500">Farzandlarim</p>
+                <p className="text-2xl font-bold">{parentChildren.length}</p>
+                <p className="text-sm text-white/80">Farzandlarim</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white">
+          <Card className="bg-gradient-to-br from-purple-500 to-violet-600 text-white border-0 shadow-lg">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <GraduationCap className="h-6 w-6 text-purple-600" />
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <GraduationCap className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold">
                   {parentChildren.filter((c: any) => c.group_students?.[0]?.group).length}
                 </p>
-                <p className="text-sm text-gray-500">Guruhda</p>
+                <p className="text-sm text-white/80">Guruhda</p>
               </div>
             </CardContent>
           </Card>
@@ -680,7 +682,7 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900">Farzandlarim</h2>
           </div>
           {parentChildren.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {parentChildren.map((child) => {
                 const gs = child.group_students?.[0]
                 const group = gs?.group
@@ -689,114 +691,154 @@ export default function DashboardPage() {
                 const childLessons = childData?.lessons || []
                 const childGrid = childData?.attendance
                 const pay = getCurrentMonthPayment(childPayments)
-                const todayL = getTodayLessons(childLessons)
-                const absentToday = childGrid && todayL.length > 0 ? todayL.filter(l => {
-                  const map = childGrid.attendance_map?.[l.id]
-                  return map && map[child.id] && !map[child.id].is_present
-                }) : []
+                const attPercent = childGrid ? getStudentAttendancePercent(child.id, group?.id, childGrid) : 0
 
                 return (
-                  <Card key={child.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-5">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="h-14 w-14 border-2 border-pink-200 shrink-0">
+                  <Card key={child.id} className="border-0 shadow-lg overflow-hidden">
+                    <div className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 px-5 py-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-14 w-14 border-2 border-white/50 shrink-0">
                           <AvatarImage src={child.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/students/${child.photo}` : ""} />
-                          <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+                          <AvatarFallback className="bg-white/20 text-white text-lg">
                             {child.first_name?.[0]}{child.last_name?.[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <h3 className="font-bold text-gray-900 text-lg">
-                              {child.first_name} {child.last_name}
-                            </h3>
-                            <Badge className={`border-0 ${child.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <div className="flex-1 min-w-0 text-white">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-lg">{child.first_name} {child.last_name}</h3>
+                            <Badge className={`border-0 text-[10px] ${child.isActive ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
                               {child.isActive ? "Faol" : "Nofaol"}
                             </Badge>
                           </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                            <div className="space-y-1.5">
-                              {group ? (
-                                <>
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <School className="h-4 w-4 text-gray-400" />
-                                    <span className="font-medium text-gray-900">{group.name}</span>
-                                  </div>
-                                  {group.room && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                      <MapPin className="h-3 w-3" />
-                                      {group.room.name}
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <Badge className={`border-0 text-[10px] ${pay.status === 'paid' ? 'bg-green-100 text-green-700' : pay.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                                      {pay.status === 'paid' ? 'Tolangan' : pay.status === 'partial' ? 'Qisman' : 'Tolanmagan'}
-                                    </Badge>
-                                    {pay.amount > 0 && (
-                                      <span className={`text-xs font-medium ${pay.status === 'paid' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {pay.amount.toLocaleString()} UZS
-                                      </span>
-                                    )}
-                                  </div>
-                                </>
-                              ) : (
-                                <p className="text-sm text-gray-400">Guruhga biriktirilmagan</p>
-                              )}
-                            </div>
-
-                            <div className="space-y-1.5">
-                              {todayL.length > 0 ? (
-                                <div>
-                                  <p className="text-xs font-semibold text-gray-500 mb-1">Bugungi darslar:</p>
-                                  {todayL.map((l) => {
-                                    const isAbsent = childGrid?.attendance_map?.[l.id]?.[child.id] && !childGrid.attendance_map[l.id][child.id].is_present
-                                    return (
-                                      <div key={l.id} className="flex items-center gap-2 text-xs">
-                                        <Clock className="h-3 w-3 text-gray-400" />
-                                        <span>{l.time}</span>
-                                        {isAbsent ? (
-                                          <Badge className="bg-red-100 text-red-700 border-0 text-[10px]">Kelgan</Badge>
-                                        ) : (
-                                          <Badge className="bg-green-100 text-green-700 border-0 text-[10px]">Keldi</Badge>
-                                        )}
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              ) : childLessons.length > 0 ? (
-                                <div>
-                                  <p className="text-xs font-semibold text-gray-500 mb-1">Kungi dars:</p>
-                                  <p className="text-xs text-gray-400">Bugun dars yoq</p>
-                                </div>
-                              ) : (
-                                <p className="text-xs text-gray-400">Dars jadvali yoq</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {absentToday.length > 0 && (
-                            <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                              <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-                              <p className="text-xs text-red-700">
-                                Farzandingiz bugungi darsga kelmagan
-                              </p>
+                          {group && (
+                            <div className="flex items-center gap-3 text-sm text-white/80 mt-0.5">
+                              <span className="flex items-center gap-1"><School className="h-3.5 w-3.5" /> {group.name}</span>
+                              {group.room && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {group.room.name}</span>}
                             </div>
                           )}
                         </div>
                       </div>
+                    </div>
 
-                      <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                    <CardContent className="p-5 space-y-5">
+                      {/* Stats row: Attendance + Payment */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Card className="border-0 bg-gradient-to-br from-emerald-50 to-green-100">
+                          <CardContent className="p-3 flex items-center gap-3">
+                            <div className="relative w-14 h-14 shrink-0">
+                              <svg className="w-14 h-14 -rotate-90" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="16" fill="none" stroke="#d1d5db" strokeWidth="3" />
+                                <circle cx="18" cy="18" r="16" fill="none" stroke={attPercent >= 80 ? "#22c55e" : attPercent >= 50 ? "#eab308" : "#ef4444"} strokeWidth="3"
+                                  strokeDasharray={`${attPercent * 1.005} 100.5`} strokeLinecap="round" />
+                              </svg>
+                              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-900">
+                                {attPercent}%
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700">Davomat</p>
+                              <p className="text-[10px] text-gray-500">{childGrid?.lessons?.length || 0} ta dars</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card className={`border-0 ${pay.status === 'paid' ? 'bg-gradient-to-br from-green-50 to-emerald-100' : pay.status === 'partial' ? 'bg-gradient-to-br from-amber-50 to-yellow-100' : 'bg-gradient-to-br from-red-50 to-rose-100'}`}>
+                          <CardContent className="p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-semibold text-gray-700">To'lov</span>
+                              {pay.status === 'paid' ? <CheckCircle2 className="h-4 w-4 text-green-600" /> :
+                               pay.status === 'partial' ? <Clock className="h-4 w-4 text-amber-600" /> :
+                               <XCircle className="h-4 w-4 text-red-500" />}
+                            </div>
+                            <Badge className={`border-0 text-[10px] ${pay.status === 'paid' ? 'bg-green-200 text-green-800' : pay.status === 'partial' ? 'bg-amber-200 text-amber-800' : 'bg-red-200 text-red-800'}`}>
+                              {pay.status === 'paid' ? "To'langan" : pay.status === 'partial' ? 'Qisman' : "To'lanmagan"}
+                            </Badge>
+                            {pay.amount > 0 && (
+                              <p className="text-xs font-semibold text-gray-800 mt-1">{pay.amount.toLocaleString()} UZS</p>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Full Schedule */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <CalendarDays className="h-4 w-4 text-purple-600" />
+                          <h4 className="text-sm font-semibold text-gray-800">Dars jadvali</h4>
+                        </div>
+                        {childLessons.length > 0 ? (
+                          <ScheduleView
+                            lessons={childLessons}
+                            groupName={group?.name}
+                            roomName={group?.room?.name}
+                          />
+                        ) : (
+                          <p className="text-xs text-gray-400 text-center py-4">Dars jadvali mavjud emas</p>
+                        )}
+                      </div>
+
+                      {/* Absence alert */}
+                      {childGrid && (() => {
+                        const todayStr = new Date().toISOString().split('T')[0]
+                        const todayLessons = childLessons.filter(l => l.date === todayStr)
+                        const absentToday = todayLessons.filter(l => {
+                          const map = childGrid.attendance_map?.[l.id]
+                          return map && map[child.id] && !map[child.id].is_present
+                        })
+                        return absentToday.length > 0 ? (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+                            <p className="text-xs text-red-700">Farzandingiz bugungi darsga kelmagan ({absentToday.length} ta)</p>
+                          </div>
+                        ) : null
+                      })()}
+
+                      {/* Recent Payments */}
+                      {childPayments.length > 0 && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4 text-emerald-600" />
+                              <h4 className="text-sm font-semibold text-gray-800">Oxirgi to'lovlar</h4>
+                            </div>
+                            <Link href={`/dashboard/payments?childId=${child.id}`}>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-blue-600">
+                                Barchasi
+                              </Button>
+                            </Link>
+                          </div>
+                          <div className="space-y-1.5">
+                            {childPayments.slice(-5).reverse().map((p: Payment) => (
+                              <div key={p.id} className={`flex items-center justify-between p-2 rounded-lg border ${
+                                p.status === 'paid' ? 'border-green-100 bg-green-50/50' :
+                                p.status === 'partial' ? 'border-amber-100 bg-amber-50/50' :
+                                'border-red-100 bg-red-50/50'
+                              }`}>
+                                <div className="flex items-center gap-2">
+                                  {p.status === 'paid' ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> :
+                                   p.status === 'partial' ? <Clock className="h-3.5 w-3.5 text-amber-600" /> :
+                                   <XCircle className="h-3.5 w-3.5 text-red-500" />}
+                                  <span className="text-xs font-medium text-gray-700">{MONTHS[p.month - 1]} {p.year}</span>
+                                </div>
+                                <span className="text-xs font-semibold text-gray-800">{p.amount.toLocaleString()} UZS</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex gap-2 pt-2 border-t border-gray-100">
                         <Link href={`/dashboard/marks?childId=${child.id}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full text-xs">
-                            <Percent className="h-3 w-3 mr-1" />
+                          <Button size="sm" className="w-full text-xs bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 border-0">
+                            <Percent className="h-3.5 w-3.5 mr-1" />
                             Davomat
                           </Button>
                         </Link>
-                        <Link href={`/dashboard/profile?childId=${child.id}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full text-xs">
-                            <CreditCard className="h-3 w-3 mr-1" />
-                            Tolovlar
+                        <Link href={`/dashboard/payments?childId=${child.id}`} className="flex-1">
+                          <Button size="sm" className="w-full text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 border-0">
+                            <CreditCard className="h-3.5 w-3.5 mr-1" />
+                            To'lovlar
                           </Button>
                         </Link>
                       </div>
@@ -806,7 +848,7 @@ export default function DashboardPage() {
               })}
             </div>
           ) : (
-            <Card>
+            <Card className="border-0 shadow-md">
               <CardContent className="p-8 text-center text-gray-500">
                 <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                 <p>Sizga biriktirilgan farzand yoq</p>
@@ -822,7 +864,7 @@ export default function DashboardPage() {
               <Newspaper className="h-5 w-5 text-indigo-600" />
               <h2 className="text-lg font-semibold text-gray-900">Yangiliklar</h2>
             </div>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-0 shadow-md">
               <CardContent className="p-0 relative">
                 <div className="relative h-64">
                   <img src={news[currentNewsIndex]?.image ? `${process.env.NEXT_PUBLIC_API_URL}${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "https://placehold.co/800x400"} alt={news[currentNewsIndex]?.title || ""} className="w-full h-full object-cover"

@@ -24,13 +24,17 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
 
     if (viewMode === "daily") {
       const dateStr = format(currentDate, "yyyy-MM-dd")
-      return lessons.filter((l) => l.date === dateStr)
+      return lessons.filter((l) => {
+        const lessonDate = l.date.split('T')[0] || l.date
+        return lessonDate === dateStr
+      })
     }
 
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
     const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
     return lessons.filter((l) => {
-      const lessonDate = parseISO(l.date)
+      const dateStr = (l.date.split('T')[0] || l.date)
+      const lessonDate = parseISO(dateStr)
       return lessonDate >= weekStart && lessonDate <= weekEnd
     })
   }, [lessons, viewMode, currentDate])
@@ -124,16 +128,17 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
             filteredLessons
               .sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00"))
               .map((lesson) => {
-                const isPast = parseISO(lesson.date) < new Date(new Date().toDateString())
+                const lessonDateStr = lesson.date.split('T')[0] || lesson.date
+                const isPast = parseISO(lessonDateStr) < new Date(new Date().toDateString())
                 return (
                   <Card key={lesson.id} className={`${isPast ? "opacity-60" : ""} hover:shadow-md transition-shadow`}>
                     <CardContent className="p-4 flex items-center gap-4">
                       <div className="w-14 h-14 bg-blue-100 rounded-2xl flex flex-col items-center justify-center shrink-0">
                         <span className="text-lg font-bold text-blue-700 leading-none">
-                          {format(parseISO(lesson.date), "dd")}
+                          {format(parseISO(lessonDateStr), "dd")}
                         </span>
                         <span className="text-[10px] text-blue-500 font-medium uppercase">
-                          {format(parseISO(lesson.date), "MMM")}
+                          {format(parseISO(lessonDateStr), "MMM")}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -144,7 +149,7 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
                             </Badge>
                           )}
                           {isPast && <Badge variant="outline" className="text-[10px] text-gray-400">Otgan</Badge>}
-                          {isToday(parseISO(lesson.date)) && !isPast && (
+                          {isToday(parseISO(lessonDateStr)) && !isPast && (
                             <Badge className="text-[10px] bg-green-100 text-green-700 border-0">Bugun</Badge>
                           )}
                         </div>
@@ -176,7 +181,7 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
             const dateStr = format(day, "yyyy-MM-dd")
             const dayLessons = groupedByDay.get(dateStr) || []
             const isCurrent = isToday(day)
-            const isPast = day < new Date(new Date().toDateString())
+            const isPast = new Date(format(day, 'yyyy-MM-dd')) < new Date(new Date().toDateString())
             return (
               <Card key={dateStr} className={`${isCurrent ? "ring-2 ring-blue-400" : ""} ${isPast && dayLessons.length === 0 ? "opacity-40" : ""}`}>
                 <CardContent className="p-2 text-center">

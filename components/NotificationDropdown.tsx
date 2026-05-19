@@ -1,9 +1,7 @@
-// components/NotificationsDropdown.tsx
-
 "use client";
 
 import { Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -13,9 +11,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
-import { uz } from "date-fns/locale"; // 👈 Uzbek locale
+import { uz } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationApi, Notification, getNotificationImageUrl } from "@/lib/api";
+import { io } from "socket.io-client";
+
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.ilmify-edu.uz";
 
 export function NotificationsDropdown() {
   const { user } = useAuth();
@@ -23,49 +24,86 @@ export function NotificationsDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const socketRef = useRef<ReturnType<typeof io> | null>(null);
 
-  // Fetch notifications from the API
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user?.id) return;
     try {
       setLoading(true);
       const data = await notificationApi.getUserNotifications(user.id);
-      setNotifications(data);
-      setUnreadCount(data.filter((n) => !n.is_read).length);
+      if (Array.isArray(data)) {
+        setNotifications(data);
+        setUnreadCount(data.filter((n) => !n.is_read).length);
+      }
     } catch (error) {
       console.error("Bildirishnomalarni yuklashda xatolik:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  // Mark all currently unread notifications as read
+  // WebSocket real-time connection
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const role = typeof window !== 'undefined' ? localStorage.getItem('role') || 'student' : 'student';
+
+    const socket = io(SOCKET_URL, {
+      query: { userId: String(user.id), role, token: token || '' },
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.on('connect', () => {
+      console.log('[NotifSocket] Connected');
+    });
+
+    socket.on('notification', (data: Notification) => {
+      setNotifications(prev => {
+        const exists = prev.some(n => n.id === data.id);
+        if (exists) return prev;
+        return [data, ...prev].slice(0, 100);
+      });
+      setUnreadCount(prev => prev + 1);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('[NotifSocket] Error:', err.message);
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [user?.id]);
+
   const markAllAsRead = async () => {
-    const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
+    if (!user?.id) return;
+    const unreadIds = notifications.filter((n) => !n.is_read);
     if (unreadIds.length === 0) return;
     try {
-      await notificationApi.markMultipleAsRead(unreadIds);
-      await fetchNotifications(); // Refresh after marking
+      const role = typeof window !== 'undefined' ? localStorage.getItem('role') || 'student' : 'student';
+      await notificationApi.markAllAsRead(user.id, role);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
     } catch (error) {
       console.error("Barchasini o‘qilgan deb belgilashda xatolik:", error);
     }
   };
 
-  // When dropdown opens, mark all as read
   useEffect(() => {
-    if (open && notifications.length > 0) {
+    if (open && unreadCount > 0) {
       markAllAsRead();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Initial fetch and periodic refresh
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // har 30 sekundda yangilanadi
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [fetchNotifications]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -81,7 +119,6 @@ export function NotificationsDropdown() {
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-96 p-0 shadow-xl rounded-xl border border-gray-200">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/80 rounded-t-xl">
           <h3 className="text-base font-semibold text-gray-900">Bildirishnomalar</h3>
           {unreadCount > 0 && (
@@ -91,7 +128,6 @@ export function NotificationsDropdown() {
           )}
         </div>
 
-        {/* Notification List */}
         <ScrollArea className="h-[32rem] max-h-[70vh]">
           {loading && notifications.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-sm text-gray-500">
@@ -108,7 +144,7 @@ export function NotificationsDropdown() {
                 const imageUrl = getNotificationImageUrl(notification.image);
                 const timeAgo = formatDistanceToNow(
                   new Date(notification.createdAt),
-                  { addSuffix: true, locale: uz } // 👈 o‘zbekcha vaqt formati
+                  { addSuffix: true, locale: uz }
                 );
 
                 return (
@@ -120,7 +156,6 @@ export function NotificationsDropdown() {
                     `}
                   >
                     <div className="flex gap-4">
-                      {/* Image */}
                       {imageUrl && (
                         <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
                           <Image
@@ -135,7 +170,6 @@ export function NotificationsDropdown() {
                         </div>
                       )}
 
-                      {/* Content */}
                       <div className="flex-1 space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-semibold text-gray-900 leading-tight">
@@ -175,8 +209,6 @@ export function NotificationsDropdown() {
             </div>
           )}
         </ScrollArea>
-
-        {/* Optional footer – could add "Barchasini o‘qilgan deb belgilash" here */}
       </PopoverContent>
     </Popover>
   );
