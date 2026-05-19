@@ -597,7 +597,7 @@ export default function DashboardPage() {
               <CardContent className="p-12 text-center">
                 <School className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                 <p className="text-gray-500 text-lg font-medium">Hozircha sizga biriktirilgan guruh mavjud emas</p>
-                <p className="text-gray-400 text-sm mt-2">Administrator bilan bog'laning</p>
+                <p className="text-gray-400 text-sm mt-2">Administrator bilan bog'laning!</p>
               </CardContent>
             </Card>
           )}
@@ -607,7 +607,7 @@ export default function DashboardPage() {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Newspaper className="h-5 w-5 text-indigo-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Yangiliklar</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Yangiliklar </h2>
             </div>
             <Card className="overflow-hidden border-0 shadow-md">
               <CardContent className="p-0 relative">
