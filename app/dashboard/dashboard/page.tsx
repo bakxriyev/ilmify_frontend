@@ -13,10 +13,11 @@ import {
   Users, BookOpen, Calendar, Newspaper, CreditCard, Clock, ArrowRight,
   ChevronLeft, ChevronRight, GraduationCap, School, UserCheck, AlertTriangle,
   DollarSign, TrendingUp, MapPin, Phone, Mail, Bell, BellRing, X, CheckCircle2,
-  UserX, Percent, CalendarDays, Menu, Wallet, Eye, EyeOff, XCircle
+  UserX, Percent, CalendarDays, Menu, Wallet, Eye, EyeOff, XCircle, Timer,
+  Sparkles, Star, Award, BarChart3, BookMarked, HeartHandshake
 } from "lucide-react"
 import Link from "next/link"
-import { format, parseISO, isToday, startOfMonth, endOfMonth, isFuture } from "date-fns"
+import { format, parseISO, isToday, isFuture } from "date-fns"
 
 const MONTHS = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr']
 
@@ -29,6 +30,8 @@ export default function DashboardPage() {
   const [studentLessons, setStudentLessons] = useState<GroupLesson[]>([])
   const [studentPayments, setStudentPayments] = useState<Payment[]>([])
   const [studentMonthAttendance, setStudentMonthAttendance] = useState<any>(null)
+  const [mainTeacherData, setMainTeacherData] = useState<any>(null)
+  const [supportTeacherData, setSupportTeacherData] = useState<any>(null)
 
   // Teacher data
   const [teacherGroups, setTeacherGroups] = useState<any[]>([])
@@ -57,6 +60,18 @@ export default function DashboardPage() {
         ])
         setStudentLessons(lessons)
         setStudentPayments(payments)
+
+        // Load teachers separately if not included in group data
+        if (gs.group.mainTeacher) {
+          setMainTeacherData(gs.group.mainTeacher)
+        } else if (gs.group.teacher_id) {
+          api.getTeacherById(Number(gs.group.teacher_id)).then(setMainTeacherData).catch(() => {})
+        }
+        if (gs.group.supportTeacher) {
+          setSupportTeacherData(gs.group.supportTeacher)
+        } else if (gs.group.support_teacher_id) {
+          api.getTeacherById(Number(gs.group.support_teacher_id)).then(setSupportTeacherData).catch(() => {})
+        }
 
         // Load current month attendance
         const now = new Date()
@@ -184,28 +199,54 @@ export default function DashboardPage() {
   if (isStudent && user) {
     const currentMonthPay = getCurrentMonthPayment(studentPayments)
     const todayLessons = getTodayLessons(studentLessons)
-    const upcomingLessons = studentLessons.filter(l => !isFuture(parseISO(l.date)) === false).slice(0, 3)
     const attPercent = studentGroup ? getStudentAttendancePercent(user.id.toString(), studentGroup.id, studentMonthAttendance) : 0
+    const hasTeachers = !!(mainTeacherData || supportTeacherData)
 
     return (
-      <div className="p-4 md:p-6 bg-gray-50 min-h-screen space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-500 text-sm">Xush kelibsiz, {(user as any).first_name || "Oquvchi"}!</p>
+      <div className="p-4 md:p-6 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen space-y-6">
+        {/* Header with greeting */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-6 md:p-8 shadow-xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <Sparkles className="h-5 w-5 text-yellow-300" />
+              <h1 className="text-2xl md:text-3xl font-bold text-white">Dashboard</h1>
+            </div>
+            <p className="text-white/80 text-sm md:text-base">
+              Xush kelibsiz, <span className="font-semibold text-white">{(user as any).first_name || "O'quvchi"}!</span>
+            </p>
+            {studentGroup && (
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
+                <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm text-xs">
+                  <School className="h-3 w-3 mr-1" />
+                  {studentGroup.name}
+                </Badge>
+                {studentGroup.level && (
+                  <Badge className="bg-white/15 text-white/80 border-0 backdrop-blur-sm text-xs">
+                    <GraduationCap className="h-3 w-3 mr-1" />
+                    {studentGroup.level.name || studentGroup.level.title}
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Main content */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-white">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <CalendarDays className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">
+            {/* Schedule */}
+            <Card className="border-0 shadow-lg bg-white overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5 text-white" />
+                  <h2 className="text-lg font-semibold text-white">
                     {todayLessons.length > 0 ? "Bugungi darslar" : "Dars jadvali"}
                   </h2>
                 </div>
+              </div>
+              <CardContent className="p-5">
                 <ScheduleView
                   lessons={studentLessons}
                   groupName={studentGroup?.name}
@@ -214,113 +255,165 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-white">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <School className="h-5 w-5 text-purple-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Mening guruhim</h2>
+            {/* Two columns: Group info + Teachers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Group info */}
+              <Card className="border-0 shadow-lg bg-white overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <School className="h-4 w-4 text-white" />
+                    <h2 className="text-sm font-semibold text-white">Mening guruhim</h2>
                   </div>
+                </div>
+                <CardContent className="p-4">
                   {studentGroup ? (
-                    <div className="space-y-2">
-                      <p className="text-xl font-bold text-gray-900">{studentGroup.name}</p>
+                    <div className="space-y-2.5">
+                      <p className="text-lg font-bold text-gray-900">{studentGroup.name}</p>
                       {studentGroup.level && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <GraduationCap className="h-4 w-4" />
-                          <span>{studentGroup.level.name || studentGroup.level.title}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                            <GraduationCap className="h-4 w-4 text-purple-600" />
+                          </div>
+                          <span className="text-gray-700">{studentGroup.level.name || studentGroup.level.title}</span>
                         </div>
                       )}
                       {studentGroup.room && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="h-4 w-4" />
-                          <span>Xona: {studentGroup.room.name}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-7 h-7 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
+                            <MapPin className="h-4 w-4 text-rose-600" />
+                          </div>
+                          <span className="text-gray-700">Xona: {studentGroup.room.name}</span>
                         </div>
                       )}
                       {studentGroup.monthly_price && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <DollarSign className="h-4 w-4" />
-                          <span>Oylik: {Number(studentGroup.monthly_price).toLocaleString()} UZS</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                            <DollarSign className="h-4 w-4 text-emerald-600" />
+                          </div>
+                          <span className="text-gray-700">Oylik: {Number(studentGroup.monthly_price).toLocaleString()} UZS</span>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-400">Guruhga biriktirilmagansiz</p>
+                    <div className="text-center py-4">
+                      <School className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+                      <p className="text-sm text-gray-400">Guruhga biriktirilmagansiz</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-white">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <UserCheck className="h-5 w-5 text-green-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Ustozlarim</h2>
+              {/* Teachers */}
+              <Card className="border-0 shadow-lg bg-white overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <HeartHandshake className="h-4 w-4 text-white" />
+                    <h2 className="text-sm font-semibold text-white">Ustozlarim</h2>
                   </div>
-                  {studentGroup ? (
+                </div>
+                <CardContent className="p-4">
+                  {hasTeachers ? (
                     <div className="space-y-3">
-                      {studentGroup.mainTeacher && (
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={studentGroup.mainTeacher.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/teachers/${studentGroup.mainTeacher.photo}` : ""} />
-                            <AvatarFallback className="bg-blue-100 text-blue-700">
-                              {studentGroup.mainTeacher.first_name?.[0]}{studentGroup.mainTeacher.last_name?.[0]}
+                      {mainTeacherData && (
+                        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                          <Avatar className="h-11 w-11 ring-2 ring-blue-300">
+                            <AvatarImage src={mainTeacherData.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/teachers/${mainTeacherData.photo}` : ""} />
+                            <AvatarFallback className="bg-blue-100 text-blue-700 text-sm font-bold">
+                              {mainTeacherData.first_name?.[0]}{mainTeacherData.last_name?.[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="font-medium text-gray-900 text-sm">
-                              {studentGroup.mainTeacher.first_name} {studentGroup.mainTeacher.last_name}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm truncate">
+                              {mainTeacherData.first_name} {mainTeacherData.last_name}
                             </p>
-                            <p className="text-xs text-gray-500">Asosiy oqituvchi</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                              <Badge className="bg-blue-100 text-blue-700 border-0 text-[9px] px-1.5 py-0">Asosiy</Badge>
+                              {mainTeacherData.phone_number && (
+                                <span className="flex items-center gap-0.5">
+                                  <Phone className="h-3 w-3" /> {mainTeacherData.phone_number}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
-                      {studentGroup.supportTeacher && (
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={studentGroup.supportTeacher.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/teachers/${studentGroup.supportTeacher.photo}` : ""} />
-                            <AvatarFallback className="bg-green-100 text-green-700">
-                              {studentGroup.supportTeacher.first_name?.[0]}{studentGroup.supportTeacher.last_name?.[0]}
+                      {supportTeacherData && (
+                        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100">
+                          <Avatar className="h-11 w-11 ring-2 ring-emerald-300">
+                            <AvatarImage src={supportTeacherData.photo ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/teachers/${supportTeacherData.photo}` : ""} />
+                            <AvatarFallback className="bg-emerald-100 text-emerald-700 text-sm font-bold">
+                              {supportTeacherData.first_name?.[0]}{supportTeacherData.last_name?.[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="font-medium text-gray-900 text-sm">
-                              {studentGroup.supportTeacher.first_name} {studentGroup.supportTeacher.last_name}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm truncate">
+                              {supportTeacherData.first_name} {supportTeacherData.last_name}
                             </p>
-                            <p className="text-xs text-gray-500">Yordamchi oqituvchi</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                              <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[9px] px-1.5 py-0">Yordamchi</Badge>
+                              {supportTeacherData.phone_number && (
+                                <span className="flex items-center gap-0.5">
+                                  <Phone className="h-3 w-3" /> {supportTeacherData.phone_number}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      )}
-                      {!studentGroup.mainTeacher && !studentGroup.supportTeacher && (
-                        <p className="text-sm text-gray-400">Oqituvchi malumotlari yoq</p>
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-400">Malumot yoq</p>
+                    <div className="text-center py-4">
+                      <UserCheck className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+                      <p className="text-sm text-gray-400">O'qituvchi ma'lumotlari yo'q</p>
+                      <p className="text-xs text-gray-300 mt-1">Administrator bilan bog'laning</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="bg-white">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Percent className="h-5 w-5 text-indigo-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">Davomat</h2>
+            {/* Attendance */}
+            <Card className="border-0 shadow-lg bg-white overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-white" />
+                  <h2 className="text-lg font-semibold text-white">Davomat</h2>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="relative w-20 h-20">
-                    <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
+              </div>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-5">
+                  <div className="relative w-24 h-24 shrink-0">
+                    <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="16" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                      <circle cx="18" cy="18" r="16" fill="none" stroke={attPercent >= 80 ? "#22c55e" : attPercent >= 50 ? "#eab308" : "#ef4444"} strokeWidth="3"
-                        strokeDasharray={`${attPercent * 1.005} 100.5`} strokeLinecap="round" />
+                      <circle cx="18" cy="18" r="16" fill="none" stroke={attPercent >= 80 ? "#22c55e" : attPercent >= 50 ? "#eab308" : "#ef4444"} strokeWidth="3.5"
+                        strokeDasharray={`${Math.min(attPercent, 100) * 1.005} 100.5`} strokeLinecap="round" className="transition-all duration-1000" />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900">
-                      {attPercent}%
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className={`text-xl font-bold ${attPercent >= 80 ? 'text-green-600' : attPercent >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                        {attPercent}%
+                      </span>
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <p>Joriy oy uchun davomat</p>
+                  <div className="space-y-1">
+                    <p className="font-medium text-gray-800">Joriy oy uchun davomat</p>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                        <span className="text-gray-500">Bor ({studentMonthAttendance?.lessons?.filter((l: any) => {
+                          const attMap = studentMonthAttendance?.attendance_map?.[l.id]
+                          return attMap && attMap[user.id.toString()]?.is_present
+                        })?.length || 0})</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                        <span className="text-gray-500">Yo'q ({studentMonthAttendance?.lessons?.filter((l: any) => {
+                          const attMap = studentMonthAttendance?.attendance_map?.[l.id]
+                          return attMap && !attMap[user.id.toString()]?.is_present
+                        })?.length || 0})</span>
+                      </div>
+                    </div>
                     {studentMonthAttendance?.lessons && (
-                      <p className="text-xs text-gray-400">{studentMonthAttendance.lessons.length} ta dars</p>
+                      <p className="text-xs text-gray-400">{studentMonthAttendance.lessons.length} ta dars o'tkazilgan</p>
                     )}
                   </div>
                 </div>
@@ -328,22 +421,39 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <div className="space-y-4">
-            <Card className={`border ${currentMonthPay.status === 'paid' ? 'border-green-200 bg-green-50' : currentMonthPay.status === 'partial' ? 'border-yellow-200 bg-yellow-50' : 'border-red-200 bg-red-50'}`}>
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <CreditCard className={`h-5 w-5 ${currentMonthPay.status === 'paid' ? 'text-green-600' : currentMonthPay.status === 'partial' ? 'text-yellow-600' : 'text-red-600'}`} />
-                  <h2 className="text-lg font-semibold text-gray-900">Tolov</h2>
+          {/* Right sidebar */}
+          <div className="space-y-5">
+            {/* Payment card */}
+            <Card className={`border-0 shadow-lg overflow-hidden ${
+              currentMonthPay.status === 'paid' ? 'ring-2 ring-green-400' :
+              currentMonthPay.status === 'partial' ? 'ring-2 ring-amber-400' :
+              currentMonthPay.status === 'unpaid' ? 'ring-2 ring-red-400' :
+              ''
+            }`}>
+              <div className={`px-4 py-3 ${
+                currentMonthPay.status === 'paid' ? 'bg-gradient-to-r from-green-600 to-emerald-600' :
+                currentMonthPay.status === 'partial' ? 'bg-gradient-to-r from-amber-600 to-orange-600' :
+                currentMonthPay.status === 'unpaid' ? 'bg-gradient-to-r from-red-600 to-rose-600' :
+                'bg-gradient-to-r from-gray-600 to-gray-700'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-white" />
+                  <h2 className="text-sm font-semibold text-white">Joriy oy to'lovi</h2>
                 </div>
-                <div className="space-y-2">
+              </div>
+              <CardContent className="p-4">
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Holat</span>
                     <Badge className={
                       currentMonthPay.status === 'paid' ? 'bg-green-100 text-green-700 border-0' :
-                      currentMonthPay.status === 'partial' ? 'bg-yellow-100 text-yellow-700 border-0' :
-                      'bg-red-100 text-red-700 border-0'
+                      currentMonthPay.status === 'partial' ? 'bg-amber-100 text-amber-700 border-0' :
+                      currentMonthPay.status === 'unpaid' ? 'bg-red-100 text-red-700 border-0' :
+                      'bg-gray-100 text-gray-500 border-0'
                     }>
-                      {currentMonthPay.status === 'paid' ? 'Tolangan' : currentMonthPay.status === 'partial' ? 'Qisman' : 'Tolanmagan'}
+                      {currentMonthPay.status === 'paid' ? "To'langan" :
+                       currentMonthPay.status === 'partial' ? 'Qisman' :
+                       currentMonthPay.status === 'unpaid' ? "To'lanmagan" : "Ma'lumot yo'q"}
                     </Badge>
                   </div>
                   {currentMonthPay.amount > 0 && (
@@ -352,7 +462,7 @@ export default function DashboardPage() {
                         <span className="text-gray-600">Summa</span>
                         <span className="font-semibold text-gray-900">{currentMonthPay.amount.toLocaleString()} UZS</span>
                       </div>
-                      {currentMonthPay.status !== 'paid' && (
+                      {currentMonthPay.status !== 'paid' && currentMonthPay.debt > 0 && (
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-gray-600">Qarzdorlik</span>
                           <span className="font-semibold text-red-600">{(currentMonthPay.amount - currentMonthPay.paid).toLocaleString()} UZS</span>
@@ -361,61 +471,104 @@ export default function DashboardPage() {
                     </>
                   )}
                   {studentGroup?.monthly_price && (
-                    <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-200">
+                    <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
                       <span className="text-gray-600">Oylik narx</span>
                       <span className="font-semibold text-gray-900">{Number(studentGroup.monthly_price).toLocaleString()} UZS</span>
                     </div>
                   )}
-                </div>
-                {currentMonthPay.status !== 'paid' && (
-                  <Link href="/dashboard/profile">
-                    <Button variant="outline" size="sm" className="w-full mt-3 border-red-200 text-red-600 hover:bg-red-50">
-                      Tolov qilish
+                  <Link href="/dashboard/payments">
+                    <Button size="sm" variant="outline" className="w-full mt-1">
+                      <Wallet className="h-3.5 w-3.5 mr-1" />
+                      Barcha to'lovlar
                     </Button>
                   </Link>
-                )}
+                </div>
               </CardContent>
             </Card>
 
+            {/* Today's lessons */}
             {todayLessons.length > 0 && (
-              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <h2 className="text-lg font-semibold text-gray-900">Bugungi dars</h2>
+              <Card className="border-0 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-white" />
+                    <h2 className="text-sm font-semibold text-white">Bugungi dars</h2>
+                    <Badge className="bg-white/20 text-white border-0 text-[10px] ml-auto">{todayLessons.length} ta</Badge>
                   </div>
-                  {todayLessons
-                    .sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00"))
-                    .map((lesson) => (
-                      <div key={lesson.id} className="flex items-start gap-3 py-2 border-b border-blue-100 last:border-0">
-                        <div className="w-10 h-10 bg-blue-200 rounded-xl flex items-center justify-center shrink-0">
-                          <Clock className="h-5 w-5 text-blue-700" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-sm">
-                            {lesson.unit?.name || lesson.unit?.title || "Dars"}
-                          </p>
-                          <p className="text-xs text-gray-600">{lesson.time}</p>
-                          {studentGroup?.room && <p className="text-xs text-gray-400">{studentGroup.room.name}</p>}
-                        </div>
-                      </div>
-                    ))}
+                </div>
+                <CardContent className="p-3">
+                  <div className="space-y-2">
+                    {todayLessons
+                      .sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00"))
+                      .map((lesson) => {
+                        const timeRange = lesson.end_time
+                          ? `${lesson.start_time || lesson.time} - ${lesson.end_time}`
+                          : lesson.time || "00:00"
+                        const lessonRoom = lesson.room?.name || studentGroup?.room?.name || ""
+                        return (
+                          <div key={lesson.id} className="flex items-start gap-3 p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                              <Timer className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 text-sm">
+                                {lesson.unit?.name || lesson.unit?.title || "Dars"}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-blue-500" />
+                                  {timeRange}
+                                </span>
+                                {lessonRoom && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 text-rose-500" />
+                                    {lessonRoom}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                  </div>
                 </CardContent>
               </Card>
             )}
 
+            {/* Recent payments */}
             {studentPayments.length > 0 && (
-              <Card className="bg-white">
-                <CardContent className="p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Oxirgi tolovlar</h3>
+              <Card className="border-0 shadow-lg bg-white overflow-hidden">
+                <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-white" />
+                      <h2 className="text-sm font-semibold text-white">Oxirgi to'lovlar</h2>
+                    </div>
+                    <Link href="/dashboard/payments">
+                      <Button variant="ghost" size="sm" className="h-6 text-[10px] text-white/80 hover:text-white">
+                        Barchasi
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                <CardContent className="p-3">
                   <div className="space-y-1.5">
                     {studentPayments.slice(-3).reverse().map((p) => (
-                      <div key={p.id} className="flex justify-between items-center text-xs">
-                        <span className="text-gray-600">{p.month}.{p.year}</span>
-                        <span className="font-medium">{p.amount.toLocaleString()} UZS</span>
-                        <Badge className={`text-[10px] ${p.status === 'paid' ? 'bg-green-100 text-green-700' : p.status === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'} border-0`}>
-                          {p.status === 'paid' ? 'Tolangan' : p.status === 'partial' ? 'Qisman' : 'Tolanmagan'}
-                        </Badge>
+                      <div key={p.id} className={`flex items-center justify-between p-2 rounded-lg ${
+                        p.status === 'paid' ? 'bg-green-50' :
+                        p.status === 'partial' ? 'bg-amber-50' : 'bg-red-50'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          {p.status === 'paid' ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                          ) : p.status === 'partial' ? (
+                            <Clock className="h-3.5 w-3.5 text-amber-600" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5 text-red-500" />
+                          )}
+                          <span className="text-xs font-medium text-gray-700">{MONTHS[p.month - 1]} {p.year}</span>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-800">{p.amount.toLocaleString()} UZS</span>
                       </div>
                     ))}
                   </div>
@@ -425,38 +578,39 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* News */}
         {news.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Newspaper className="h-5 w-5 text-indigo-600" />
               <h2 className="text-lg font-semibold text-gray-900">Yangiliklar</h2>
             </div>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden border-0 shadow-lg rounded-2xl">
               <CardContent className="p-0 relative">
-                <div className="relative h-64">
+                <div className="relative h-72">
                   <img
                     src={news[currentNewsIndex]?.image ? `${process.env.NEXT_PUBLIC_API_URL}${news[currentNewsIndex].image.startsWith('/') ? '' : '/uploads/news/'}${news[currentNewsIndex].image}` : "/placeholder.svg"}
                     alt={news[currentNewsIndex]?.title || ""}
                     className="w-full h-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/800x400/6366f1/ffffff?text=Yangilik" }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-5 left-5 right-5 text-white">
                     <h3 className="text-xl font-bold">{news[currentNewsIndex]?.title}</h3>
-                    <p className="text-sm opacity-90 mt-1">{news[currentNewsIndex]?.description}</p>
+                    <p className="text-sm text-white/80 mt-1 line-clamp-2">{news[currentNewsIndex]?.description}</p>
                   </div>
                   <div className="absolute top-4 right-4 flex gap-1.5">
                     {news.map((_, idx) => (
                       <button key={idx} onClick={() => setCurrentNewsIndex(idx)}
-                        className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentNewsIndex ? "bg-white scale-110" : "bg-white/50"}`} />
+                        className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentNewsIndex ? "bg-white scale-110" : "bg-white/40 hover:bg-white/60"}`} />
                     ))}
                   </div>
                   <button onClick={() => setCurrentNewsIndex(p => (p - 1 + news.length) % news.length)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/30 rounded-full text-white hover:bg-black/50">
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-black/20 backdrop-blur-sm rounded-full text-white hover:bg-black/40 transition-all">
                     <ChevronLeft size={18} />
                   </button>
                   <button onClick={() => setCurrentNewsIndex(p => (p + 1) % news.length)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/30 rounded-full text-white hover:bg-black/50">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-black/20 backdrop-blur-sm rounded-full text-white hover:bg-black/40 transition-all">
                     <ChevronRight size={18} />
                   </button>
                 </div>

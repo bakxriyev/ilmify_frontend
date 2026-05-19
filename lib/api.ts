@@ -61,6 +61,36 @@ export interface Student {
   photo: string | null;
   password: string;
   group_id: string | null;
+  group?: {
+    id: string;
+    name: string;
+    teacher_id: string;
+    support_teacher_id: string;
+    level_id: string;
+    room?: Room;
+    mainTeacher: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      gmail: string;
+      phone_number: string;
+      photo: string;
+    };
+    supportTeacher: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      gmail: string;
+      phone_number: string;
+      photo: string;
+    };
+    level: {
+      id: string;
+      name: string;
+      title: string;
+      description: string;
+    };
+  };
   group_students: Array<{
     id: string;
     group_id: string;
@@ -746,6 +776,14 @@ class ApiService {
     return data;
   }
 
+  async getParentById(parentId: number): Promise<any> {
+    const response = await fetch(`${API_URL}/parents/${parentId}`, {
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch parent');
+    return response.json();
+  }
+
   async getParentChildren(parentId: number): Promise<Student[]> {
     const response = await fetch(`${API_URL}/parents/${parentId}/children`, {
       headers: this.getHeaders(),
@@ -789,12 +827,55 @@ class ApiService {
   }
 
   async updateStudent(studentId: string, data: any): Promise<any> {
+    const isFormData = data instanceof FormData
     const response = await fetch(`${API_URL}/students/${studentId}`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
-      body: JSON.stringify(data),
+      headers: isFormData ? {} : { 'Content-Type': 'application/json', ...this.getHeaders() },
+      body: isFormData ? data : JSON.stringify(data),
     });
     if (!response.ok) throw new Error('Failed to update student');
+    return response.json();
+  }
+
+  async updateTeacher(teacherId: string, data: any): Promise<any> {
+    const isFormData = data instanceof FormData
+    const response = await fetch(`${API_URL}/teachers/${teacherId}`, {
+      method: 'PATCH',
+      headers: isFormData ? {} : { 'Content-Type': 'application/json', ...this.getHeaders() },
+      body: isFormData ? data : JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update teacher');
+    return response.json();
+  }
+
+  async updateParent(parentId: string, data: any): Promise<any> {
+    const isFormData = data instanceof FormData
+    const response = await fetch(`${API_URL}/parents/${parentId}`, {
+      method: 'PATCH',
+      headers: isFormData ? {} : { 'Content-Type': 'application/json', ...this.getHeaders() },
+      body: isFormData ? data : JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update parent');
+    return response.json();
+  }
+
+  async changeParentPassword(parentId: string, data: { new: string }): Promise<any> {
+    const response = await fetch(`${API_URL}/parents/${parentId}/password`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ password: data.new }),
+    });
+    if (!response.ok) throw new Error('Failed to change password');
+    return response.json();
+  }
+
+  async changeTeacherPassword(teacherId: string, data: { new: string }): Promise<any> {
+    const response = await fetch(`${API_URL}/teachers/${teacherId}/password`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ password: data.new }),
+    });
+    if (!response.ok) throw new Error('Failed to change password');
     return response.json();
   }
 

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { format, startOfWeek, endOfWeek, addDays, isSameDay, parseISO, isToday } from "date-fns"
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react"
+import { format, startOfWeek, endOfWeek, addDays, parseISO, isToday } from "date-fns"
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Clock, MapPin, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -126,29 +126,34 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
             </Card>
           ) : (
             filteredLessons
-              .sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00"))
+                .sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00"))
               .map((lesson) => {
                 const lessonDateStr = lesson.date.split('T')[0] || lesson.date
                 const isPast = parseISO(lessonDateStr) < new Date(new Date().toDateString())
+                const timeRange = lesson.end_time
+                  ? `${lesson.start_time || lesson.time} - ${lesson.end_time}`
+                  : lesson.time || "00:00"
+                const lessonRoom = lesson.room?.name || roomName || ""
                 return (
                   <Card key={lesson.id} className={`${isPast ? "opacity-60" : ""} hover:shadow-md transition-shadow`}>
                     <CardContent className="p-4 flex items-center gap-4">
-                      <div className="w-14 h-14 bg-blue-100 rounded-2xl flex flex-col items-center justify-center shrink-0">
-                        <span className="text-lg font-bold text-blue-700 leading-none">
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex flex-col items-center justify-center shrink-0 shadow-md">
+                        <span className="text-lg font-bold text-white leading-none">
                           {format(parseISO(lessonDateStr), "dd")}
                         </span>
-                        <span className="text-[10px] text-blue-500 font-medium uppercase">
+                        <span className="text-[10px] text-blue-200 font-medium uppercase">
                           {format(parseISO(lessonDateStr), "MMM")}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {lesson.unit && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-0">
+                              <GraduationCap className="h-3 w-3 mr-1" />
                               {lesson.unit.name || lesson.unit.title}
                             </Badge>
                           )}
-                          {isPast && <Badge variant="outline" className="text-[10px] text-gray-400">Otgan</Badge>}
+                          {isPast && <Badge variant="outline" className="text-[10px] text-gray-400 border-gray-300">O'tgan</Badge>}
                           {isToday(parseISO(lessonDateStr)) && !isPast && (
                             <Badge className="text-[10px] bg-green-100 text-green-700 border-0">Bugun</Badge>
                           )}
@@ -158,13 +163,13 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
                         </p>
                         <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {lesson.time || "00:00"}
+                            <Clock className="h-3 w-3 text-blue-500" />
+                            {timeRange}
                           </span>
-                          {roomName && (
+                          {lessonRoom && (
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {roomName}
+                              <MapPin className="h-3 w-3 text-rose-500" />
+                              {lessonRoom}
                             </span>
                           )}
                         </div>
@@ -191,11 +196,16 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
                   </p>
                   {dayLessons.length > 0 ? (
                     <div className="mt-1 space-y-0.5">
-                      {dayLessons.sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00")).map((l) => (
-                        <div key={l.id} className="text-[9px] bg-blue-50 text-blue-700 rounded px-1 py-0.5 font-medium truncate">
-                          {l.time || "00:00"}
-                        </div>
-                      ))}
+                      {dayLessons.sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00")).map((l) => {
+                        const lTimeRange = l.end_time
+                          ? `${l.start_time || l.time} - ${l.end_time}`
+                          : l.time || "00:00"
+                        return (
+                          <div key={l.id} className="text-[9px] bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded px-1 py-0.5 font-medium truncate" title={lTimeRange + (l.room?.name ? ` | ${l.room.name}` : "")}>
+                            {lTimeRange}
+                          </div>
+                        )
+                      })}
                     </div>
                   ) : (
                     <p className="text-[9px] text-gray-300 mt-1">-</p>
