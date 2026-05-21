@@ -1,0 +1,21 @@
+{
+  "name": "Ilmify Education",
+  "short_name": "Ilmify",
+  "description": "Ilmify Education - o'quvchilar uchun platforma",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["education"],
+  "lang": "uz",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "192x192",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ]
+}
