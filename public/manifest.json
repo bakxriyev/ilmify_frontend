@@ -1,7 +1,7 @@
 {
   "name": "Ilmify Education",
   "short_name": "Ilmify",
-  "description": "Ilmify Education - o'quvchilar uchun platforma",
+  "description": "Ilmify Education - o'quvchilar uchun platformasi",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
