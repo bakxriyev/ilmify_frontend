@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
-import { Home, BookOpen, Award, TrendingUp, Plus, User, LogOut, ShoppingBag, MessageSquare, Users, School, Heart, Building, Wallet } from "lucide-react"
+import { Home, BookOpen, Award, TrendingUp, Plus, User, LogOut, ShoppingBag, MessageSquare, Users, School, Heart, Building, Wallet, MapPin } from "lucide-react"
 import { Logo } from "@/components/ui/Logo"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ const studentItems = [
 const teacherItems = [
   { icon: School,     label: "Guruhlarim", href: "/dashboard" },
   { icon: Award,      label: "Baholar",   href: "/dashboard/marks" },
+  { icon: MapPin,     label: "Davomat",   href: "/dashboard/attendance" },
 ]
 
 const parentItems = [

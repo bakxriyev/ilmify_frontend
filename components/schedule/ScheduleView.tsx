@@ -159,7 +159,7 @@ export function ScheduleView({ lessons, groupName, roomName }: ScheduleViewProps
                           )}
                         </div>
                         <p className="font-medium text-gray-900 text-sm mt-1">
-                          {groupName || "Guruh"} {lesson.parity === "odd" ? "(T/R)" : "(J/U)"}
+                          {groupName || "Guruh"} {lesson.parity === "odd" ? "(T/R)" : lesson.parity === "everyday" ? "(Har kuni)" : "(J/U)"}
                         </p>
                         <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                           <span className="flex items-center gap-1">

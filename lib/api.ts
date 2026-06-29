@@ -967,6 +967,54 @@ class ApiService {
     if (!response.ok) throw new Error('Failed to delete account');
     return response.json();
   }
+
+  // ---- Teacher Attendance ----
+  async getTeacherCenterLocation(): Promise<any> {
+    const response = await fetch(`${API_URL}/teacher-attendance/my-center-location`, {
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch center location');
+    return response.json();
+  }
+
+  async teacherCheckIn(formData: FormData): Promise<any> {
+    const response = await fetch(`${API_URL}/teacher-attendance/check-in`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.token}` },
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ message: 'Check-in failed' }));
+      throw new Error(err.message || 'Check-in failed');
+    }
+    return response.json();
+  }
+
+  async teacherCheckOut(data: { latitude: number; longitude: number }): Promise<any> {
+    const response = await fetch(`${API_URL}/teacher-attendance/check-out`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ message: 'Check-out failed' }));
+      throw new Error(err.message || 'Check-out failed');
+    }
+    return response.json();
+  }
+
+  async getTeacherMyAttendanceRecords(params?: { page?: number; limit?: number; start_date?: string; end_date?: string }): Promise<any> {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
+    if (params?.start_date) query.append('start_date', params.start_date);
+    if (params?.end_date) query.append('end_date', params.end_date);
+    const response = await fetch(`${API_URL}/teacher-attendance/my-records?${query}`, {
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch attendance records');
+    return response.json();
+  }
 }
 
 export const shopApi = {
