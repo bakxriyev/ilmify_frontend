@@ -275,72 +275,10 @@ function StudentRow({
               <td key={colIndex} className="px-1 py-2 text-center align-middle">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold mx-auto shadow-md bg-gradient-to-br from-red-400 to-red-600 text-white">
                   0
-      </div>
-
-      {/* Student Detail Modal */}
-      <Dialog open={!!selectedStudentDetail} onOpenChange={(open) => { if (!open) { setSelectedStudentDetail(null); setStudentPayments(null); setStudentDebts(null); }}}>
-        <DialogContent className="bg-white w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-base">
-              {selectedStudentDetail ? `${selectedStudentDetail.first_name} ${selectedStudentDetail.last_name}` : ''}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-gray-400">
-              O'quvchi ma'lumotlari
-            </DialogDescription>
-          </DialogHeader>
-          {selectedStudentDetail && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg text-xs">
-                <div><span className="text-gray-500">Telefon:</span> <span className="font-medium">{selectedStudentDetail.phone_number || '-'}</span></div>
-                <div><span className="text-gray-500">Parol:</span> <span className="font-medium">{selectedStudentDetail.password || '-'}</span></div>
-              </div>
-              {loadingPayments ? (
-                <div className="text-center py-4 text-xs text-gray-400">Yuklanmoqda...</div>
-              ) : (
-                <>
-                  {studentDebts && studentDebts.total_debt > 0 && (
-                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                      <div className="flex items-center gap-2 text-red-700 font-semibold text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5" /> Jami qarzdorlik: {Math.floor(studentDebts.total_debt).toLocaleString()} so'm
-                      </div>
-                      {studentDebts.debts?.map((d: any, i: number) => (
-                        <div key={i} className="flex justify-between text-xs text-red-600 mt-1 pl-4">
-                          <span>{monthNames[d.month - 1]} {d.year} - {d.group_name}</span>
-                          <span className="font-medium">{Math.floor(d.amount).toLocaleString()} so'm</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {studentPayments && studentPayments.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-semibold text-gray-700 mb-2">To'lov tarixi</h4>
-                      <div className="space-y-1 max-h-40 overflow-y-auto">
-                        {studentPayments.map((p: any) => (
-                          <div key={p.id} className="flex justify-between items-center p-2 bg-green-50 rounded-lg border border-green-100 text-xs">
-                            <div>
-                              <span className="font-medium text-gray-800">{monthNames[(p.month || 1) - 1]} {p.year}</span>
-                              <span className="text-gray-400 ml-2">{p.group?.name || ''}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-green-700">{Math.floor(p.amount).toLocaleString()} so'm</span>
-                              <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px]">
-                                {p.payment_type === 'naqt' ? 'Naqt' : p.payment_type === 'karta' ? 'Karta' : p.payment_type === 'click' ? 'Click' : p.payment_type || 'Naqt'}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
+                </div>
+              </td>
+            )
+          }
 
           // Has result - show percentage
           return (
@@ -938,6 +876,68 @@ export default function MarksPage() {
           </table>
         </div>
       </div>
+
+      {/* Student Detail Modal */}
+      <Dialog open={!!selectedStudentDetail} onOpenChange={(open) => { if (!open) { setSelectedStudentDetail(null); setStudentPayments(null); setStudentDebts(null); }}}>
+        <DialogContent className="bg-white w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {selectedStudentDetail ? `${selectedStudentDetail.first_name} ${selectedStudentDetail.last_name}` : ''}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-400">
+              O'quvchi ma'lumotlari
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStudentDetail && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg text-xs">
+                <div><span className="text-gray-500">Telefon:</span> <span className="font-medium">{selectedStudentDetail.phone_number || '-'}</span></div>
+                <div><span className="text-gray-500">Parol:</span> <span className="font-medium">{selectedStudentDetail.password || '-'}</span></div>
+              </div>
+              {loadingPayments ? (
+                <div className="text-center py-4 text-xs text-gray-400">Yuklanmoqda...</div>
+              ) : (
+                <>
+                  {studentDebts && studentDebts.total_debt > 0 && (
+                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                      <div className="flex items-center gap-2 text-red-700 font-semibold text-xs">
+                        <AlertTriangle className="h-3.5 w-3.5" /> Jami qarzdorlik: {Math.floor(studentDebts.total_debt).toLocaleString()} so'm
+                      </div>
+                      {studentDebts.debts?.map((d: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs text-red-600 mt-1 pl-4">
+                          <span>{monthNames[d.month - 1]} {d.year} - {d.group_name}</span>
+                          <span className="font-medium">{Math.floor(d.amount).toLocaleString()} so'm</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {studentPayments && studentPayments.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-700 mb-2">To'lov tarixi</h4>
+                      <div className="space-y-1 max-h-40 overflow-y-auto">
+                        {studentPayments.map((p: any) => (
+                          <div key={p.id} className="flex justify-between items-center p-2 bg-green-50 rounded-lg border border-green-100 text-xs">
+                            <div>
+                              <span className="font-medium text-gray-800">{monthNames[(p.month || 1) - 1]} {p.year}</span>
+                              <span className="text-gray-400 ml-2">{p.group?.name || ''}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-green-700">{Math.floor(p.amount).toLocaleString()} so'm</span>
+                              <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px]">
+                                {p.payment_type === 'naqt' ? 'Naqt' : p.payment_type === 'karta' ? 'Karta' : p.payment_type === 'click' ? 'Click' : p.payment_type || 'Naqt'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
