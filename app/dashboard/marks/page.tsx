@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Users, Phone, Check, X, Home, Users2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Users, Phone, Check, X, DollarSign, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +28,10 @@ import { format, addMonths, subMonths, isFuture, isToday, addHours } from "date-
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { AttendanceSelector } from "@/components/AttendanceSelector"
 import { ReasonDialog } from "@/components/ReasonDialog"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 
 // ---------- Constants ----------
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -148,6 +152,7 @@ function StudentRow({
   teacherRole,
   onAttendanceClick,
   onAttendanceSelect,
+  onStudentClick,
 }: {
   student: GroupStudent
   rank: number
@@ -160,6 +165,7 @@ function StudentRow({
   teacherRole: 'main' | 'support' | null
   onAttendanceClick: (lessonId: string, studentId: string, currentValue: AttendanceValue | null) => void
   onAttendanceSelect: (lessonId: string, studentId: string, currentValue: AttendanceValue | null, element: HTMLElement) => void
+  onStudentClick?: (student: GroupStudent) => void
 }) {
   const displayName = `${student.first_name} ${student.last_name?.charAt(0)}.`
   const studentPhotoUrl = getStudentPhotoUrl(student.photo)
@@ -184,6 +190,7 @@ function StudentRow({
   const rowClass = notDoneCount >= 3 ? "bg-red-50/50 hover:bg-red-100/50" : ""
 
   const handleCellClick = (event: React.MouseEvent, lessonId: string, date: Date, attendance: AttendanceValue | null) => {
+    event.preventDefault()
     if (!teacherRole || isFuture(date)) return
 
     const element = event.currentTarget as HTMLElement
@@ -216,7 +223,8 @@ function StudentRow({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <div className="text-xs font-semibold text-gray-900 truncate">{displayName}</div>
+            <button type="button" onClick={() => onStudentClick?.(student)} className="text-xs font-semibold text-gray-900 truncate hover:text-blue-600 text-left">{displayName}</button>
+            <div className="text-[9px] text-gray-400">{student.phone_number}</div>
           </div>
         </div>
       </td>
@@ -267,10 +275,72 @@ function StudentRow({
               <td key={colIndex} className="px-1 py-2 text-center align-middle">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold mx-auto shadow-md bg-gradient-to-br from-red-400 to-red-600 text-white">
                   0
-                </div>
-              </td>
-            )
-          }
+      </div>
+
+      {/* Student Detail Modal */}
+      <Dialog open={!!selectedStudentDetail} onOpenChange={(open) => { if (!open) { setSelectedStudentDetail(null); setStudentPayments(null); setStudentDebts(null); }}}>
+        <DialogContent className="bg-white w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {selectedStudentDetail ? `${selectedStudentDetail.first_name} ${selectedStudentDetail.last_name}` : ''}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-400">
+              O'quvchi ma'lumotlari
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStudentDetail && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg text-xs">
+                <div><span className="text-gray-500">Telefon:</span> <span className="font-medium">{selectedStudentDetail.phone_number || '-'}</span></div>
+                <div><span className="text-gray-500">Parol:</span> <span className="font-medium">{selectedStudentDetail.password || '-'}</span></div>
+              </div>
+              {loadingPayments ? (
+                <div className="text-center py-4 text-xs text-gray-400">Yuklanmoqda...</div>
+              ) : (
+                <>
+                  {studentDebts && studentDebts.total_debt > 0 && (
+                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                      <div className="flex items-center gap-2 text-red-700 font-semibold text-xs">
+                        <AlertTriangle className="h-3.5 w-3.5" /> Jami qarzdorlik: {Math.floor(studentDebts.total_debt).toLocaleString()} so'm
+                      </div>
+                      {studentDebts.debts?.map((d: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs text-red-600 mt-1 pl-4">
+                          <span>{monthNames[d.month - 1]} {d.year} - {d.group_name}</span>
+                          <span className="font-medium">{Math.floor(d.amount).toLocaleString()} so'm</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {studentPayments && studentPayments.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-700 mb-2">To'lov tarixi</h4>
+                      <div className="space-y-1 max-h-40 overflow-y-auto">
+                        {studentPayments.map((p: any) => (
+                          <div key={p.id} className="flex justify-between items-center p-2 bg-green-50 rounded-lg border border-green-100 text-xs">
+                            <div>
+                              <span className="font-medium text-gray-800">{monthNames[(p.month || 1) - 1]} {p.year}</span>
+                              <span className="text-gray-400 ml-2">{p.group?.name || ''}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-green-700">{Math.floor(p.amount).toLocaleString()} so'm</span>
+                              <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px]">
+                                {p.payment_type === 'naqt' ? 'Naqt' : p.payment_type === 'karta' ? 'Karta' : p.payment_type === 'click' ? 'Click' : p.payment_type || 'Naqt'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
 
           // Has result - show percentage
           return (
@@ -308,6 +378,7 @@ function StudentRow({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
+                      type="button"
                       onClick={(e) => handleCellClick(e, lessonId, dateObj.date, attendance)}
                       disabled={!isInteractive}
                       className={`w-9 h-9 rounded-full flex items-center justify-center mx-auto shadow-md transition-all ${
@@ -386,7 +457,7 @@ export default function MarksPage() {
   const [teacherGroups, setTeacherGroups] = useState<TeacherGroup[]>([])
   const [teacherRole, setTeacherRole] = useState<'main' | 'support' | null>(null)
 
-  const [mode, setMode] = useState<"homework" | "attendance">("homework")
+  const [mode] = useState<"homework" | "attendance">("attendance")
 
   // Homework data (null = not done)
   const [unitResults, setUnitResults] = useState<Record<string, Record<string, number | null>>>({})
@@ -404,6 +475,28 @@ export default function MarksPage() {
     studentId: string
     currentValue: AttendanceValue | null
   } | null>(null)
+
+  // Student detail modal
+  const [selectedStudentDetail, setSelectedStudentDetail] = useState<GroupStudent | null>(null)
+  const [studentPayments, setStudentPayments] = useState<any[] | null>(null)
+  const [studentDebts, setStudentDebts] = useState<any>(null)
+  const [loadingPayments, setLoadingPayments] = useState(false)
+  const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr']
+
+  const openStudentDetail = async (student: GroupStudent) => {
+    setSelectedStudentDetail(student)
+    setStudentPayments(null)
+    setStudentDebts(null)
+    setLoadingPayments(true)
+    try {
+      const [payments, debts] = await Promise.all([
+        api.getStudentPayments(student.id).catch(() => []),
+        api.getStudentDebts(student.id).catch(() => null),
+      ])
+      setStudentPayments(payments)
+      setStudentDebts(debts)
+    } catch {} finally { setLoadingPayments(false) }
+  }
 
   // Reason dialog
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false)
@@ -792,19 +885,7 @@ export default function MarksPage() {
                 <span className="text-xs font-semibold text-gray-700">{totalStudents} students</span>
               </div>
 
-              <ToggleGroup 
-                type="single" 
-                value={mode} 
-                onValueChange={(value) => value && setMode(value as "homework" | "attendance")} 
-                className="bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm border border-gray-200/50"
-              >
-                <ToggleGroupItem value="homework" className="data-[state=on]:bg-blue-500 data-[state=on]:text-white">
-                  <Home className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="attendance" className="data-[state=on]:bg-blue-500 data-[state=on]:text-white">
-                  <Users2 className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
+
             </div>
           </div>
 
@@ -837,20 +918,21 @@ export default function MarksPage() {
             </thead>
             <tbody>
               {groupStudents.map((student, idx) => (
-                <StudentRow
-                  key={student.id}
-                  student={student}
-                  rank={idx + 1}
-                  dates={dates}
-                  unitResults={unitResults}
-                  attendanceData={attendanceData}
-                  isLoadingResults={isResultsLoading}
-                  isLoadingAttendance={isAttendanceLoading}
-                  mode={mode}
-                  teacherRole={teacherRole}
-                  onAttendanceClick={handleAttendanceClick}
-                  onAttendanceSelect={handleAttendanceSelect}
-                />
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    rank={idx + 1}
+                    dates={dates}
+                    unitResults={unitResults}
+                    attendanceData={attendanceData}
+                    isLoadingResults={isResultsLoading}
+                    isLoadingAttendance={isAttendanceLoading}
+                    mode={mode}
+                    teacherRole={teacherRole}
+                    onAttendanceClick={handleAttendanceClick}
+                    onAttendanceSelect={handleAttendanceSelect}
+                    onStudentClick={openStudentDetail}
+                  />
               ))}
             </tbody>
           </table>

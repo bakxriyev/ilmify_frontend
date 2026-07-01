@@ -897,6 +897,14 @@ class ApiService {
     return response.json();
   }
 
+  async getStudentDebts(studentId: string): Promise<any> {
+    const response = await fetch(`${API_URL}/payments/debts/${studentId}`, {
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch debts');
+    return response.json();
+  }
+
   async getGroupPaymentSummary(groupId: string): Promise<any> {
     const response = await fetch(`${API_URL}/payments/groups/${groupId}`, {
       headers: this.getHeaders(),
