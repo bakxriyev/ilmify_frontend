@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { ChevronLeft, ChevronRight, Users, Phone, Check, X, DollarSign, AlertTriangle } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
+import { ChevronLeft, ChevronRight, Users, Phone, Check, X, DollarSign, AlertTriangle, Pencil, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
@@ -153,6 +154,8 @@ function StudentRow({
   onAttendanceClick,
   onAttendanceSelect,
   onStudentClick,
+  debt,
+  isLoadingDebt,
 }: {
   student: GroupStudent
   rank: number
@@ -166,6 +169,8 @@ function StudentRow({
   onAttendanceClick: (lessonId: string, studentId: string, currentValue: AttendanceValue | null) => void
   onAttendanceSelect: (lessonId: string, studentId: string, currentValue: AttendanceValue | null, element: HTMLElement) => void
   onStudentClick?: (student: GroupStudent) => void
+  debt?: number
+  isLoadingDebt?: boolean
 }) {
   const displayName = `${student.first_name} ${student.last_name?.charAt(0)}.`
   const studentPhotoUrl = getStudentPhotoUrl(student.photo)
@@ -225,6 +230,17 @@ function StudentRow({
           <div className="min-w-0">
             <button type="button" onClick={() => onStudentClick?.(student)} className="text-xs font-semibold text-gray-900 truncate hover:text-blue-600 text-left">{displayName}</button>
             <div className="text-[9px] text-gray-400">{student.phone_number}</div>
+            {!isLoadingDebt && debt !== undefined && debt > 0 && (
+              <div className="flex items-center gap-0.5 mt-0.5">
+                <DollarSign className="w-2.5 h-2.5 text-red-500" />
+                <span className="text-[8px] font-bold text-red-500 leading-none">
+                  Qarz: {Math.floor(debt).toLocaleString()} so'm
+                </span>
+              </div>
+            )}
+            {isLoadingDebt && (
+              <div className="text-[8px] text-gray-400 mt-0.5">...</div>
+            )}
           </div>
         </div>
       </td>
@@ -419,6 +435,11 @@ export default function MarksPage() {
   const [studentPayments, setStudentPayments] = useState<any[] | null>(null)
   const [studentDebts, setStudentDebts] = useState<any>(null)
   const [loadingPayments, setLoadingPayments] = useState(false)
+  const [groupDebts, setGroupDebts] = useState<Record<string, number>>({})
+  const [isLoadingDebts, setIsLoadingDebts] = useState(false)
+  const [editingPhone, setEditingPhone] = useState(false)
+  const [editPhoneValue, setEditPhoneValue] = useState('')
+  const [phoneError, setPhoneError] = useState<string | null>(null)
   const monthNames = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr']
 
   const openStudentDetail = async (student: GroupStudent) => {
@@ -643,6 +664,35 @@ export default function MarksPage() {
     fetchAttendance()
   }, [groupStudents, group, currentDate, mode])
 
+  // ---------- Fetch group debts for current month ----------
+  useEffect(() => {
+    const fetchGroupDebts = async () => {
+      if (!selectedGroupId || mode !== "attendance") {
+        setGroupDebts({})
+        return
+      }
+      setIsLoadingDebts(true)
+      try {
+        const month = currentDate.getMonth() + 1
+        const year = currentDate.getFullYear()
+        const summary = await api.getGroupPaymentSummary(selectedGroupId, month, year)
+        if (Array.isArray(summary)) {
+          const debtMap: Record<string, number> = {}
+          summary.forEach((item: any) => {
+            const sid = String(item.student?.id)
+            if (sid) debtMap[sid] = item.debt || 0
+          })
+          setGroupDebts(debtMap)
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setIsLoadingDebts(false)
+      }
+    }
+    fetchGroupDebts()
+  }, [selectedGroupId, currentDate, mode])
+
   // ---------- Attendance handlers ----------
   const handleAttendanceSelect = (lessonId: string, studentId: string, currentValue: AttendanceValue | null, element: HTMLElement) => {
     setSelectorAnchor(element)
@@ -744,6 +794,42 @@ export default function MarksPage() {
     setPendingAttendance(null)
   }
 
+  const startEditingPhone = () => {
+    setEditPhoneValue(selectedStudentDetail?.phone_number || '')
+    setPhoneError(null)
+    setEditingPhone(true)
+  }
+
+  const handleSavePhone = async () => {
+    if (!selectedStudentDetail) return
+    const cleaned = editPhoneValue.trim()
+    if (!cleaned) {
+      setPhoneError('Telefon raqam kiritilishi shart')
+      return
+    }
+    try {
+      await api.updateStudent(selectedStudentDetail.id, { phone_number: cleaned })
+      setSelectedStudentDetail(prev => prev ? { ...prev, phone_number: cleaned } : null)
+      setGroupStudents(prev => prev.map(s =>
+        s.id === selectedStudentDetail.id ? { ...s, phone_number: cleaned } : s
+      ))
+      setEditingPhone(false)
+      setPhoneError(null)
+    } catch (err: any) {
+      const msg = err.message || ''
+      if (msg.toLowerCase().includes('allaqachon') || msg.toLowerCase().includes('mavjud')) {
+        setPhoneError('Bu telefon raqam allaqachon mavjud. Administrator bilan bog\'laning.')
+      } else {
+        setPhoneError(msg || 'Xatolik yuz berdi')
+      }
+    }
+  }
+
+  const handleCancelEditPhone = () => {
+    setEditingPhone(false)
+    setPhoneError(null)
+  }
+
   const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1))
   const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1))
   const formatMonthYear = (date: Date) => format(date, "MMMM yyyy")
@@ -773,9 +859,10 @@ export default function MarksPage() {
 
   return (
     <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-      {/* Attendance Selector Popover */}
+      {/* Attendance Selector Popover - positioned at clicked cell */}
       <AttendanceSelector
         open={selectorOpen}
+        anchorEl={selectorAnchor}
         onOpenChange={setSelectorOpen}
         onSelect={handleAttendanceChoice}
       />
@@ -870,6 +957,8 @@ export default function MarksPage() {
                     onAttendanceClick={handleAttendanceClick}
                     onAttendanceSelect={handleAttendanceSelect}
                     onStudentClick={openStudentDetail}
+                    debt={groupDebts[student.id]}
+                    isLoadingDebt={isLoadingDebts}
                   />
               ))}
             </tbody>
@@ -878,7 +967,7 @@ export default function MarksPage() {
       </div>
 
       {/* Student Detail Modal */}
-      <Dialog open={!!selectedStudentDetail} onOpenChange={(open) => { if (!open) { setSelectedStudentDetail(null); setStudentPayments(null); setStudentDebts(null); }}}>
+      <Dialog open={!!selectedStudentDetail} onOpenChange={(open) => { if (!open) { setSelectedStudentDetail(null); setStudentPayments(null); setStudentDebts(null); setEditingPhone(false); setPhoneError(null); }}}>
         <DialogContent className="bg-white w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">
@@ -891,20 +980,54 @@ export default function MarksPage() {
           {selectedStudentDetail && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg text-xs">
-                <div><span className="text-gray-500">Telefon:</span> <span className="font-medium">{selectedStudentDetail.phone_number || '-'}</span></div>
+                <div>
+                  <span className="text-gray-500">Telefon:</span>
+                  {editingPhone ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <input
+                        type="text"
+                        value={editPhoneValue}
+                        onChange={(e) => { setEditPhoneValue(e.target.value); setPhoneError(null) }}
+                        className="flex-1 min-w-0 px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleSavePhone(); if (e.key === 'Escape') handleCancelEditPhone() }}
+                      />
+                      <button type="button" onClick={handleSavePhone} className="p-1 rounded-md bg-green-500 text-white hover:bg-green-600 transition-colors flex-shrink-0" title="Saqlash">
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button type="button" onClick={handleCancelEditPhone} className="p-1 rounded-md bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors flex-shrink-0" title="Bekor qilish">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">{selectedStudentDetail.phone_number || '-'}</span>
+                      {teacherRole && (
+                        <button type="button" onClick={startEditingPhone} className="p-0.5 rounded hover:bg-gray-200 transition-colors" title="Telefon raqamni o'zgartirish">
+                          <Pencil className="w-3 h-3 text-gray-400" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {phoneError && (
+                    <div className="mt-1 text-[10px] text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-200">
+                      {phoneError}
+                    </div>
+                  )}
+                </div>
                 <div><span className="text-gray-500">Parol:</span> <span className="font-medium">{selectedStudentDetail.password || '-'}</span></div>
               </div>
               {loadingPayments ? (
                 <div className="text-center py-4 text-xs text-gray-400">Yuklanmoqda...</div>
               ) : (
                 <>
-                  {studentDebts && studentDebts.total_debt > 0 && (
+                  {studentDebts && studentDebts.debts?.length > 0 && (
                     <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                      <div className="flex items-center gap-2 text-red-700 font-semibold text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5" /> Jami qarzdorlik: {Math.floor(studentDebts.total_debt).toLocaleString()} so'm
+                      <div className="flex items-center gap-2 text-red-700 font-semibold text-xs mb-1">
+                        <AlertTriangle className="h-3.5 w-3.5" /> Qarzdorlik
                       </div>
-                      {studentDebts.debts?.map((d: any, i: number) => (
-                        <div key={i} className="flex justify-between text-xs text-red-600 mt-1 pl-4">
+                      {studentDebts.debts.map((d: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs text-red-600 mt-1">
                           <span>{monthNames[d.month - 1]} {d.year} - {d.group_name}</span>
                           <span className="font-medium">{Math.floor(d.amount).toLocaleString()} so'm</span>
                         </div>

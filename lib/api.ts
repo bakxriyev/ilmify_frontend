@@ -833,7 +833,10 @@ class ApiService {
       headers: isFormData ? {} : { 'Content-Type': 'application/json', ...this.getHeaders() },
       body: isFormData ? data : JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to update student');
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.message || 'Failed to update student');
+    }
     return response.json();
   }
 
@@ -905,8 +908,14 @@ class ApiService {
     return response.json();
   }
 
-  async getGroupPaymentSummary(groupId: string): Promise<any> {
-    const response = await fetch(`${API_URL}/payments/groups/${groupId}`, {
+  async getGroupPaymentSummary(groupId: string, month?: number, year?: number): Promise<any> {
+    let url = `${API_URL}/payments/groups/${groupId}`;
+    const params = new URLSearchParams();
+    if (month !== undefined) params.append('month', String(month));
+    if (year !== undefined) params.append('year', String(year));
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+    const response = await fetch(url, {
       headers: this.getHeaders(),
     });
     if (!response.ok) throw new Error('Failed to fetch group payments');

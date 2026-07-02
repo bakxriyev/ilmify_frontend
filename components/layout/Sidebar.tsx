@@ -40,15 +40,18 @@ export function Sidebar() {
   const pathname = usePathname()
   const { user, logout, isStudent, isTeacher, isParent } = useAuth()
   const [centerInfo, setCenterInfo] = useState<{ name: string; logo: string | null } | null>(null)
+  const [logoError, setLogoError] = useState(false)
+
+  const getLogoUrl = (logo: string | null) => {
+    if (!logo) return null
+    if (logo.startsWith('http')) return logo
+    if (logo.startsWith('/uploads')) return `${API_URL}${logo}`
+    return `${API_URL}/uploads/centers/${logo}`
+  }
 
   useEffect(() => {
     const loadCenter = async () => {
       try {
-        const cached = localStorage.getItem('center_info')
-        if (cached) {
-          setCenterInfo(JSON.parse(cached))
-          return
-        }
         const userRaw = localStorage.getItem('user')
         if (!userRaw) return
         const userData = JSON.parse(userRaw)
@@ -62,19 +65,34 @@ export function Sidebar() {
           centerId = Number(userData.group_students[0].group.center_id)
         }
 
-        if (centerId) {
-          const token = localStorage.getItem('token')
-          const res = await fetch(`${API_URL}/education-centers/${centerId}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          })
-          if (res.ok) {
-            const c = await res.json()
-            const info = { name: c.name, logo: c.logo }
+        if (!centerId) return
+
+        // Try API fetch
+        const token = localStorage.getItem('token')
+        const res = await fetch(`${API_URL}/education-centers/${centerId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+        if (res.ok) {
+          const c = await res.json()
+          const info = { name: c.name, logo: c.logo }
+          setCenterInfo(info)
+          localStorage.setItem('center_info', JSON.stringify(info))
+        } else {
+          // Fallback to user center data
+          const center = userData.center
+          if (center) {
+            const info = { name: center.name, logo: center.logo }
             setCenterInfo(info)
             localStorage.setItem('center_info', JSON.stringify(info))
           }
         }
-      } catch {}
+      } catch {
+        // Fallback to cached
+        try {
+          const cached = localStorage.getItem('center_info')
+          if (cached) setCenterInfo(JSON.parse(cached))
+        } catch {}
+      }
     }
     loadCenter()
   }, [])
@@ -92,9 +110,13 @@ export function Sidebar() {
           {centerInfo ? (
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-700 flex items-center justify-center shrink-0">
-                {centerInfo.logo ? (
-                  <img src={`${API_URL}/uploads/centers/${centerInfo.logo}`}
-                    className="w-full h-full object-cover" alt={centerInfo.name} />
+                {getLogoUrl(centerInfo.logo) && !logoError ? (
+                  <img
+                    src={getLogoUrl(centerInfo.logo)!}
+                    className="w-full h-full object-cover"
+                    alt={centerInfo.name}
+                    onError={() => setLogoError(true)}
+                  />
                 ) : (
                   <Building className="w-5 h-5 text-blue-400" />
                 )}
