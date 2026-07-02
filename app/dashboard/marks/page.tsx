@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select"
 import { useAuth } from "@/contexts/AuthContext"
 import { api } from "@/lib/api"
-import { Student, GroupStudent, Level, Group, AttendanceRecord } from "@/lib/api"
+import { Student, GroupStudent, Level, Group } from "@/lib/api"
 import type { TeacherInfo as TeacherInfoType } from "@/lib/api"
 import { format, addMonths, subMonths, isFuture, isToday, addHours } from "date-fns"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
@@ -651,36 +651,39 @@ export default function MarksPage() {
 
       const fetchId = ++attendanceFetchId.current
       setIsAttendanceLoading(true)
-      const newAttendance: Record<string, Record<string, AttendanceValue>> = {}
 
-      const promises = relevantLessons.map(async (lessonId, index) => {
-        const lessonDate = dates[index].date
-        const dateStr = format(lessonDate, "yyyy-MM-dd")
-        try {
-          const records = await api.getGroupAttendance(group.id, dateStr)
-          if (fetchId !== attendanceFetchId.current) return
-          records.forEach((record: AttendanceRecord) => {
-            if (String(record.lesson_id) !== lessonId) return
-            const studentId = record.student_id
-            if (!newAttendance[studentId]) newAttendance[studentId] = {}
-            newAttendance[studentId][lessonId] = {
-              present: record.is_present,
-              reason: record.reason,
-            }
+      try {
+        const year = currentDate.getFullYear()
+        const month = currentDate.getMonth() + 1
+        const grid = await api.getMonthlyAttendanceGrid(group.id, year, month)
+        if (fetchId !== attendanceFetchId.current) return
+
+        const newAttendance: Record<string, Record<string, AttendanceValue>> = {}
+        if (grid?.attendance) {
+          Object.entries(grid.attendance).forEach(([lessonId, studentMap]) => {
+            Object.entries(studentMap).forEach(([studentId, record]) => {
+              if (!newAttendance[studentId]) newAttendance[studentId] = {}
+              newAttendance[studentId][lessonId] = {
+                present: record.is_present,
+                reason: record.reason ?? null,
+              }
+            })
           })
-        } catch (err) {
-          console.error(`Failed to fetch attendance for ${dateStr}:`, err)
         }
-      })
 
-      await Promise.all(promises)
-      if (fetchId === attendanceFetchId.current) {
-        setAttendanceData(newAttendance)
-        setIsAttendanceLoading(false)
+        if (fetchId === attendanceFetchId.current) {
+          setAttendanceData(newAttendance)
+          setIsAttendanceLoading(false)
+        }
+      } catch (err) {
+        console.error("Failed to fetch monthly attendance:", err)
+        if (fetchId === attendanceFetchId.current) {
+          setIsAttendanceLoading(false)
+        }
       }
     }
     fetchAttendance()
-  }, [groupStudents, group, currentDate, mode])
+  }, [groupStudents, group, currentDate, mode, lessons])
 
   // ---------- Fetch group debts for current month ----------
   useEffect(() => {

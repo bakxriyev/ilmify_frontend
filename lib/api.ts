@@ -478,11 +478,11 @@ export interface MonthlyAttendanceResponse {
     time: string;
     unit?: any;
   }>;
-  attendance_map: Record<string, Record<string, {
-    id: string;
+  attendance: Record<string, Record<string, {
     is_present: boolean;
-    reason: string | null;
+    reason?: string | null;
   }>>;
+  student_join_dates?: Record<string, string>;
 }
 
 class ApiService {
