@@ -420,6 +420,7 @@ export default function MarksPage() {
   // Attendance data
   const [attendanceData, setAttendanceData] = useState<Record<string, Record<string, AttendanceValue>>>({})
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false)
+  const attendanceFetchId = useRef(0)
 
   // Selector state
   const [selectorOpen, setSelectorOpen] = useState(false)
@@ -524,6 +525,11 @@ export default function MarksPage() {
 
   const loadGroupData = async (groupId: string) => {
     try {
+      setGroupStudents([])
+      setGroup(null)
+      setLessons([])
+      setAttendanceData({})
+
       const groupStudentsResponse = await api.getGroupStudents(groupId)
       setGroupStudents(groupStudentsResponse.students)
 
@@ -643,6 +649,7 @@ export default function MarksPage() {
       const relevantLessons = dates.map((d) => d.lessonId).filter(Boolean) as string[]
       if (relevantLessons.length === 0) return
 
+      const fetchId = ++attendanceFetchId.current
       setIsAttendanceLoading(true)
       const newAttendance: Record<string, Record<string, AttendanceValue>> = {}
 
@@ -651,7 +658,9 @@ export default function MarksPage() {
         const dateStr = format(lessonDate, "yyyy-MM-dd")
         try {
           const records = await api.getGroupAttendance(group.id, dateStr)
+          if (fetchId !== attendanceFetchId.current) return
           records.forEach((record: AttendanceRecord) => {
+            if (String(record.lesson_id) !== lessonId) return
             const studentId = record.student_id
             if (!newAttendance[studentId]) newAttendance[studentId] = {}
             newAttendance[studentId][lessonId] = {
@@ -665,8 +674,10 @@ export default function MarksPage() {
       })
 
       await Promise.all(promises)
-      setAttendanceData(newAttendance)
-      setIsAttendanceLoading(false)
+      if (fetchId === attendanceFetchId.current) {
+        setAttendanceData(newAttendance)
+        setIsAttendanceLoading(false)
+      }
     }
     fetchAttendance()
   }, [groupStudents, group, currentDate, mode])

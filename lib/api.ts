@@ -168,6 +168,33 @@ export interface GroupStudentsResponse {
   students: GroupStudent[];
 }
 
+export interface GroupStudentRelation {
+  id: number;
+  group_id: number;
+  student_id: number;
+  joined_date: string;
+  left_date: string | null;
+  is_trial: boolean;
+  student?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string | null;
+    phone_number: string;
+    photo: string | null;
+    age?: number;
+  };
+  group?: {
+    id: number;
+    name: string;
+    level?: {
+      id: number;
+      name: string;
+      title: string;
+    };
+  };
+}
+
 export interface UserDevice {
   id: string;
   user_type: string;
@@ -565,6 +592,71 @@ class ApiService {
       headers: this.getHeaders(),
     });
     if (!response.ok) throw new Error('Failed to fetch group students');
+    return response.json();
+  }
+
+  async getGroupStudentsByGroup(groupId: number): Promise<GroupStudentRelation[]> {
+    const response = await fetch(`${API_URL}/group-students/group/${groupId}`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch group student relations');
+    return response.json();
+  }
+
+  async getAllStudents(params?: { search?: string; limit?: number; page?: number }): Promise<{ data: Student[]; pagination: any }> {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.limit) query.append('limit', String(params.limit));
+    if (params?.page) query.append('page', String(params.page));
+    const url = `${API_URL}/students${query.toString() ? '?' + query.toString() : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch students');
+    return response.json();
+  }
+
+  async getNoGroupStudents(params?: { search?: string; limit?: number; page?: number }): Promise<{ data: Student[]; pagination: any }> {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.limit) query.append('limit', String(params.limit));
+    if (params?.page) query.append('page', String(params.page));
+    const url = `${API_URL}/students/no-group${query.toString() ? '?' + query.toString() : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch no-group students');
+    return response.json();
+  }
+
+  async bulkAddStudents(groupId: number, studentIds: number[], joined_date: string): Promise<GroupStudentRelation[]> {
+    const response = await fetch(`${API_URL}/group-students/group/${groupId}/bulk-add`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ student_ids: studentIds, joined_date }),
+    });
+    if (!response.ok) throw new Error('Failed to add students to group');
+    return response.json();
+  }
+
+  async removeStudentFromGroup(groupId: number, studentId: number): Promise<void> {
+    const response = await fetch(`${API_URL}/group-students/group/${groupId}/student/${studentId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to remove student from group');
+  }
+
+  async updateGroupStudentRelation(relationId: number, data: { joined_date?: string; left_date?: string | null }): Promise<GroupStudentRelation> {
+    const response = await fetch(`${API_URL}/group-students/${relationId}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update group-student relation');
     return response.json();
   }
 

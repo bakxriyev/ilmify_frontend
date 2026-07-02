@@ -24,6 +24,7 @@ const studentItems = [
 
 const teacherItems = [
   { icon: School,     label: "Guruhlarim", href: "/dashboard" },
+  { icon: Users,      label: "O'quvchilarim", href: "/dashboard/students" },
   { icon: Award,      label: "Baholar",   href: "/dashboard/marks" },
   { icon: MapPin,     label: "Davomat",   href: "/dashboard/attendance" },
 ]
